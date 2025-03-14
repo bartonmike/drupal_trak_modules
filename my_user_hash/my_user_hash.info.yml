@@ -1,0 +1,5 @@
+name: User Hash Generator
+description: Generates a unique hash code for new users
+type: module
+core_version_requirement: ^10 || ^11
+package: Custom
