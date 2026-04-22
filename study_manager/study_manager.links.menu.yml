@@ -1,0 +1,11 @@
+study_manager.admin_config:
+  title: 'Study Manager'
+  description: 'Configure Study Manager settings'
+  parent: system.admin_config_content
+  route_name: study_manager.admin_config
+
+entity.study.collection:
+  title: 'Studies'
+  description: 'Manage studies'
+  parent: system.admin_content
+  route_name: entity.study.collection

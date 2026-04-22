@@ -1,0 +1,39 @@
+study_manager.admin_config:
+  path: '/admin/config/content/study-manager'
+  defaults:
+    _form: '\Drupal\study_manager\Form\StudyManagerConfigForm'
+    _title: 'Study Manager Configuration'
+  requirements:
+    _permission: 'administer study manager'
+
+entity.study.add_form:
+  path: '/study/add'
+  defaults:
+    _entity_form: 'study.add'
+    _title: 'Add Study'
+  requirements:
+    _permission: 'create studies'
+
+entity.study.collection:
+  path: '/admin/content/studies'
+  defaults:
+    _entity_list: 'study'
+    _title: 'Studies'
+  requirements:
+    _permission: 'access study overview'
+
+entity.study.edit_form:
+  path: '/study/{study}/edit'
+  defaults:
+    _entity_form: 'study.edit'
+    _title: 'Edit Study'
+  requirements:
+    _permission: 'edit studies'
+
+entity.study.canonical:
+  path: '/study/{study}'
+  defaults:
+    _entity_view: 'study.full'
+    _title_callback: '\Drupal\study_manager\Controller\StudyController::title'
+  requirements:
+    _permission: 'view studies'

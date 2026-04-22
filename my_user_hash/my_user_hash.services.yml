@@ -1,0 +1,4 @@
+services:
+  my_user_hash.logger:
+    class: Drupal\my_user_hash\Service\UserHashLogger
+    arguments: ['@logger.factory', '@messenger']

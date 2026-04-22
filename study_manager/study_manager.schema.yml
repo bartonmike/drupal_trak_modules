@@ -1,0 +1,13 @@
+istudy_manager.settings:
+  type: config_object
+  label: 'Study Manager settings'
+  mapping:
+    file_path:
+      type: string
+      label: 'File path within private file system'
+    max_file_size:
+      type: string
+      label: 'Maximum file size'
+    allowed_extensions:
+      type: string
+      label: 'Allowed file extensions'

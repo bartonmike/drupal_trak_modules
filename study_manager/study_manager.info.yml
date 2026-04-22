@@ -1,0 +1,8 @@
+name: Study Manager
+type: module
+description: 'Module to manage studies with file attachments in private file system'
+package: Custom
+core_version_requirement: ^9 || ^10
+dependencies:
+  - drupal:file
+  - drupal:user

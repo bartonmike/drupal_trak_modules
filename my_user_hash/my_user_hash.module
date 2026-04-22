@@ -1,0 +1,115 @@
+<?php
+
+use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\user\UserInterface;
+use Drupal\Core\Logger\RfcLogLevel;
+
+/**
+ * Implements hook_entity_base_field_info().
+ */
+function my_user_hash_entity_base_field_info(EntityTypeInterface $entity_type): array {
+  $fields = [];
+  
+  if ($entity_type->id() === 'user') {
+    $fields['field_user_hash'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('User Hash'))
+      ->setDescription(t('Unique hash code for the user'))
+      ->setSettings([
+        'max_length' => 64,
+        'text_processing' => 0,
+      ])
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayConfigurable('view', TRUE)
+      ->setReadOnly(TRUE);
+  }
+  
+  return $fields;
+}
+
+
+/**
+ * Implements hook_ENTITY_TYPE_insert().
+ */
+function my_user_hash_user_insert(UserInterface $user) {
+  // Ensure we're not dealing with an existing user
+  if ($user->id() === NULL) {
+    \Drupal::logger('my_user_hash')->warning('Attempted to generate hash for a user without an ID');
+    return;
+  }
+
+  try {
+    // Verbose logging attempts
+    \Drupal::messenger()->addMessage('User Hash Module: Attempting to generate hash', 'status');
+
+    // Log user details for debugging
+    \Drupal::logger('my_user_hash')->info('User details - Email: @email, Name: @name', [
+      '@email' => $user->getEmail() ?? 'No email',
+      '@name' => $user->getAccountName() ?? 'No name',
+    ]);
+
+    // Generate a unique hash code
+    $hash_source = implode('|', [
+      $user->getEmail() ?? 'no_email',
+      $user->getAccountName() ?? 'no_name',
+      (string) microtime(true),
+      bin2hex(random_bytes(16))
+    ]);
+    
+    $hash = hash('sha256', $hash_source);
+
+    // Multiple logging attempts
+    \Drupal::logger('my_user_hash')->log(RfcLogLevel::INFO, 'Generating hash for user: @name with hash: @hash', [
+      '@name' => $user->getAccountName(),
+      '@hash' => $hash
+    ]);
+
+    \Drupal::messenger()->addMessage('Generated hash: ' . $hash, 'status');
+
+    // Attempt to set the field
+    try {
+      $user->set('field_user_hash', $hash);
+      
+      // Force save
+      $user->enforceIsNew(FALSE);
+      $user->save();
+
+      \Drupal::messenger()->addMessage('Hash saved successfully', 'status');
+      \Drupal::logger('my_user_hash')->info('Hash successfully saved for user @name', [
+        '@name' => $user->getAccountName()
+      ]);
+    } catch (\Exception $saveException) {
+      \Drupal::logger('my_user_hash')->error('Failed to save hash: @error', [
+        '@error' => $saveException->getMessage()
+      ]);
+      \Drupal::messenger()->addMessage('Error saving hash: ' . $saveException->getMessage(), 'error');
+    }
+  } catch (\Exception $e) {
+    // Comprehensive error logging
+    \Drupal::logger('my_user_hash')->error('Critical error in hash generation: @error', [
+      '@error' => $e->getMessage()
+    ]);
+
+    \Drupal::messenger()->addMessage('Critical error generating hash: ' . $e->getMessage(), 'error');
+  }
+}
+/**
+ * Implements hook_install().
+ */
+function my_user_hash_install() {
+  try {
+    // Use the correct method to apply entity updates
+    $entity_definition_update_manager = \Drupal::service('entity.definition_update_manager');
+    
+    // Check if there are any updates to apply
+    if ($entity_definition_update_manager->needsUpdates()) {
+      $entity_definition_update_manager->performUpdates();
+    }
+    
+    \Drupal::logger('my_user_hash')->info('Module installed successfully, checked for entity updates');
+  } catch (\Exception $e) {
+    \Drupal::logger('my_user_hash')->error('Error during module install: @error', [
+      '@error' => $e->getMessage()
+    ]);
+  }
+}

@@ -1,0 +1,20 @@
+administer study manager:
+  title: 'Administer Study Manager'
+  description: 'Configure Study Manager settings'
+  restrict access: true
+
+create studies:
+  title: 'Create studies'
+  description: 'Create new studies'
+
+edit studies:
+  title: 'Edit studies'
+  description: 'Edit existing studies'
+
+view studies:
+  title: 'View studies'
+  description: 'View studies'
+
+access study overview:
+  title: 'Access study overview'
+  description: 'Access the study administration overview page'

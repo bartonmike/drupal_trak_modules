@@ -1,0 +1,38 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the study_manager module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function study_manager_install() {
+  // Set default configuration values
+  $config = \Drupal::configFactory()->getEditable('study_manager.settings');
+  $config->set('file_path', 'studies');
+  $config->set('max_file_size', '50MB');
+  $config->set('allowed_extensions', 'pdf doc docx txt jpg png gif');
+  $config->save();
+  
+  // Create the base directory in private files
+  $file_system = \Drupal::service('file_system');
+  $directory = 'private://studies';
+  $file_system->prepareDirectory($directory, $file_system::CREATE_DIRECTORY | $file_system::MODIFY_PERMISSIONS);
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function study_manager_uninstall() {
+  // Remove configuration
+  \Drupal::configFactory()->getEditable('study_manager.settings')->delete();
+}
+
+/**
+ * Install the Study entity type.
+ */
+function study_manager_update_8001() {
+  \Drupal::entityDefinitionUpdateManager()->installEntityType(\Drupal::entityTypeManager()->getDefinition('study'));
+}
