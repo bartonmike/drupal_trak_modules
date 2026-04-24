@@ -63,7 +63,7 @@ class StudyForm extends ContentEntityForm {
         
         // Create the directory for this study
         $config = \Drupal::config('study_manager.settings');
-        $file_path = $config->get('file_path') ?: 'studies';
+        $file_path = ($config->get('file_path') ?: 'trak_data') . 'study_data';
         $directory = "private://{$file_path}/" . $entity->id();
         
         /** @var \Drupal\Core\File\FileSystemInterface $file_system */
