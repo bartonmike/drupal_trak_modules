@@ -30,6 +30,12 @@ class StudyManagerConfigForm extends ConfigFormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config('study_manager.settings');
 
+    $form['current_file_path'] = [
+      '#type' => 'item',
+      '#title' => $this->t('Current Private File System Path'),
+      '#markup' => '<code>' . htmlspecialchars($config->get('file_path')) . '</code>',
+    ];
+    
     $form['file_path'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Private File System Path'),
