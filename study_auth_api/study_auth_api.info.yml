@@ -1,0 +1,5 @@
+name: Study Auth API
+type: module
+description: Placeholder API for validating Drupal sessions.
+core_version_requirement: ^9 || ^10
+package: Custom

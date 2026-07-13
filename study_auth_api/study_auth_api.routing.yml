@@ -1,0 +1,7 @@
+study_auth_api.check_session:
+  path: '/api/check-session'
+  defaults:
+    _controller: '\Drupal\study_auth_api\Controller\StudyAuthController::checkSession'
+  methods: [POST]
+  requirements:
+    _access: 'TRUE'
