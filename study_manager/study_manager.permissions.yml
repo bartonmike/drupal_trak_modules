@@ -18,3 +18,7 @@ view studies:
 access study overview:
   title: 'Access study overview'
   description: 'Access the study administration overview page'
+
+manage shared study library:
+  title: 'Manage shared study file library'
+  description: 'Upload, remove, and manage files in the shared library that studies can select Comparison Data and Reference Materials from'

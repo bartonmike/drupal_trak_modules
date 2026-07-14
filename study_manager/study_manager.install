@@ -36,3 +36,30 @@ function study_manager_uninstall() {
 function study_manager_update_8001() {
   \Drupal::entityDefinitionUpdateManager()->installEntityType(\Drupal::entityTypeManager()->getDefinition('study'));
 }
+
+/**
+ * Install the private upload and shared-library selection fields on Study.
+ */
+function study_manager_update_8002() {
+  $update_manager = \Drupal::entityDefinitionUpdateManager();
+  $entity_type = \Drupal::entityTypeManager()->getDefinition('study');
+  $fields = \Drupal\study_manager\Entity\Study::baseFieldDefinitions($entity_type);
+
+  $new_fields = [
+    'private_comparison_files',
+    'private_reference_files',
+    'selected_comparison_files',
+    'selected_reference_files',
+  ];
+
+  foreach ($new_fields as $field_name) {
+    if (isset($fields[$field_name]) && !$update_manager->getFieldStorageDefinition($field_name, 'study')) {
+      $update_manager->installFieldStorageDefinition($field_name, 'study', 'study_manager', $fields[$field_name]);
+    }
+  }
+
+  // The 'files' field was relabeled to "Study Data" and restricted to CSV/XLSX.
+  if ($update_manager->getFieldStorageDefinition('files', 'study')) {
+    $update_manager->updateFieldStorageDefinition($fields['files']);
+  }
+}

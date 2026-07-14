@@ -86,12 +86,13 @@ class Study extends ContentEntityBase implements EntityOwnerInterface {
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayConfigurable('view', TRUE);
 
+    // --- File Uploads: files owned by and private to this study. ---
     $fields['files'] = BaseFieldDefinition::create('file')
-      ->setLabel(t('Files'))
-      ->setDescription(t('Files attached to this study.'))
+      ->setLabel(t('Study Data'))
+      ->setDescription(t('Study data files (CSV, XLSX) for this study.'))
       ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
       ->setSetting('file_directory', 'studies/[study:id]')
-      ->setSetting('file_extensions', 'pdf doc docx txt jpg png gif')
+      ->setSetting('file_extensions', 'csv xlsx')
       ->setSetting('uri_scheme', 'private')
       ->setDisplayOptions('view', [
         'label' => 'above',
@@ -101,6 +102,83 @@ class Study extends ContentEntityBase implements EntityOwnerInterface {
       ->setDisplayOptions('form', [
         'type' => 'file_generic',
         'weight' => 5,
+      ])
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayConfigurable('view', TRUE);
+
+    $fields['private_comparison_files'] = BaseFieldDefinition::create('file')
+      ->setLabel(t('Private Comparison Data'))
+      ->setDescription(t('Comparison data files (CSV, XLSX) private to this study.'))
+      ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
+      ->setSetting('file_directory', 'studies/[study:id]/comparison_data')
+      ->setSetting('file_extensions', 'csv xlsx')
+      ->setSetting('uri_scheme', 'private')
+      ->setDisplayOptions('view', [
+        'label' => 'above',
+        'type' => 'file_default',
+        'weight' => 6,
+      ])
+      ->setDisplayOptions('form', [
+        'type' => 'file_generic',
+        'weight' => 6,
+      ])
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayConfigurable('view', TRUE);
+
+    $fields['private_reference_files'] = BaseFieldDefinition::create('file')
+      ->setLabel(t('Private Reference Materials'))
+      ->setDescription(t('Reference material files (PDF, PNG, JPG) private to this study.'))
+      ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
+      ->setSetting('file_directory', 'studies/[study:id]/reference_materials')
+      ->setSetting('file_extensions', 'pdf png jpg')
+      ->setSetting('uri_scheme', 'private')
+      ->setDisplayOptions('view', [
+        'label' => 'above',
+        'type' => 'file_default',
+        'weight' => 7,
+      ])
+      ->setDisplayOptions('form', [
+        'type' => 'file_generic',
+        'weight' => 7,
+      ])
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayConfigurable('view', TRUE);
+
+    // --- File Selection: existing files picked from the shared library. ---
+    $fields['selected_comparison_files'] = BaseFieldDefinition::create('entity_reference')
+      ->setLabel(t('Comparison Data (Selected)'))
+      ->setDescription(t('Comparison data files (CSV, XLSX) selected from the shared library.'))
+      ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
+      ->setSetting('target_type', 'file')
+      ->setSetting('handler', 'study_manager_shared_library')
+      ->setSetting('handler_settings', ['category' => 'comparison_data'])
+      ->setDisplayOptions('view', [
+        'label' => 'above',
+        'type' => 'file_default',
+        'weight' => 8,
+      ])
+      ->setDisplayOptions('form', [
+        'type' => 'entity_reference_autocomplete_tags',
+        'weight' => 8,
+      ])
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayConfigurable('view', TRUE);
+
+    $fields['selected_reference_files'] = BaseFieldDefinition::create('entity_reference')
+      ->setLabel(t('Reference Materials (Selected)'))
+      ->setDescription(t('Reference material files (PDF, PNG, JPG) selected from the shared library.'))
+      ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
+      ->setSetting('target_type', 'file')
+      ->setSetting('handler', 'study_manager_shared_library')
+      ->setSetting('handler_settings', ['category' => 'reference_materials'])
+      ->setDisplayOptions('view', [
+        'label' => 'above',
+        'type' => 'file_default',
+        'weight' => 9,
+      ])
+      ->setDisplayOptions('form', [
+        'type' => 'entity_reference_autocomplete_tags',
+        'weight' => 9,
       ])
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayConfigurable('view', TRUE);

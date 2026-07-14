@@ -18,21 +18,38 @@ class StudyForm extends ContentEntityForm {
     
     $entity = $this->entity;
 
-    // Add custom validation and handling for file uploads
-    if (isset($form['files'])) {
-      $config = \Drupal::config('study_manager.settings');
-      $file_path = $config->get('file_path') ?: 'studies';
-      $allowed_extensions = $config->get('allowed_extensions') ?: 'pdf doc docx txt jpg png gif';
-      
-      // For new entities, use a temporary location that will be updated after save
-      $entity_id = $entity->id() ?: 'new';
-      
-      // Update file field settings with current configuration  
-      $form['files']['widget']['#upload_location'] = "private://{$file_path}/{$entity_id}";
-      
-      $form['files']['widget']['#upload_validators'] = [
-        'file_validate_extensions' => [$allowed_extensions],
-      ];
+    // Add custom validation and handling for file uploads.
+    $config = \Drupal::config('study_manager.settings');
+    $file_path = $config->get('file_path') ?: 'studies';
+
+    // For new entities, use a temporary location that will be updated after save
+    $entity_id = $entity->id() ?: 'new';
+
+    // Each upload field keeps its own subdirectory and extension whitelist
+    // so Study Data / Private Comparison Data / Private Reference Materials
+    // can't be conflated.
+    $upload_fields = [
+      'files' => [
+        'location' => "private://{$file_path}/{$entity_id}",
+        'extensions' => 'csv xlsx',
+      ],
+      'private_comparison_files' => [
+        'location' => "private://{$file_path}/{$entity_id}/comparison_data",
+        'extensions' => 'csv xlsx',
+      ],
+      'private_reference_files' => [
+        'location' => "private://{$file_path}/{$entity_id}/reference_materials",
+        'extensions' => 'pdf png jpg',
+      ],
+    ];
+
+    foreach ($upload_fields as $field_name => $settings) {
+      if (isset($form[$field_name])) {
+        $form[$field_name]['widget']['#upload_location'] = $settings['location'];
+        $form[$field_name]['widget']['#upload_validators'] = [
+          'file_validate_extensions' => [$settings['extensions']],
+        ];
+      }
     }
 
     return $form;
@@ -61,15 +78,17 @@ class StudyForm extends ContentEntityForm {
           '%label' => $entity->label(),
         ]));
         
-        // Create the directory for this study
+        // Create the upload directories for this study.
         $config = \Drupal::config('study_manager.settings');
-        $file_path = ($config->get('file_path') ?: 'trak_data') . 'study_data';
-        $directory = "private://{$file_path}/" . $entity->id();
-        
+        $file_path = $config->get('file_path') ?: 'studies';
+        $base_directory = "private://{$file_path}/" . $entity->id();
+
         /** @var \Drupal\Core\File\FileSystemInterface $file_system */
         $file_system = \Drupal::service('file_system');
-        $file_system->prepareDirectory($directory, $file_system::CREATE_DIRECTORY | $file_system::MODIFY_PERMISSIONS);
-        
+        foreach ([$base_directory, "{$base_directory}/comparison_data", "{$base_directory}/reference_materials"] as $directory) {
+          $file_system->prepareDirectory($directory, $file_system::CREATE_DIRECTORY | $file_system::MODIFY_PERMISSIONS);
+        }
+
         break;
 
       default:

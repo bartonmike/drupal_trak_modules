@@ -9,3 +9,9 @@ entity.study.collection:
   description: 'Manage studies'
   parent: system.admin_content
   route_name: entity.study.collection
+
+study_manager.shared_library:
+  title: 'Shared Study File Library'
+  description: 'Manage files studies can select as Comparison Data and Reference Materials'
+  parent: system.admin_content
+  route_name: study_manager.shared_library

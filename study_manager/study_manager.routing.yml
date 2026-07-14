@@ -6,6 +6,14 @@ study_manager.admin_config:
   requirements:
     _permission: 'administer study manager'
 
+study_manager.shared_library:
+  path: '/admin/content/studies/shared-library'
+  defaults:
+    _form: '\Drupal\study_manager\Form\SharedLibraryForm'
+    _title: 'Shared Study File Library'
+  requirements:
+    _permission: 'manage shared study library'
+
 entity.study.add_form:
   path: '/study/add'
   defaults:
@@ -36,4 +44,4 @@ entity.study.canonical:
     _entity_view: 'study.full'
     _title_callback: '\Drupal\study_manager\Controller\StudyController::title'
   requirements:
-    _permission: 'view studies'
+    _entity_access: 'study.view'

@@ -20,8 +20,8 @@ class StudyAccessControlHandler extends EntityAccessControlHandler {
     
     switch ($operation) {
       case 'view':
-        if (!$entity->isPublished()) {
-          return AccessResult::allowedIfHasPermission($account, 'view unpublished study entities');
+        if ($account->isAuthenticated() && (int) $entity->getOwnerId() === (int) $account->id()) {
+          return AccessResult::allowed()->cachePerUser()->addCacheableDependency($entity);
         }
         return AccessResult::allowedIfHasPermission($account, 'view studies');
 
