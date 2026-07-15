@@ -46,7 +46,7 @@ class StudyAuthController extends ControllerBase {
       return new JsonResponse([
 	      'valid_session' => FALSE,
 	      'reason' => 'invalid session',
-#	      'session_id' => $hashed_sid,
+	      'session_id' => $hashed_sid,
       ]);
     }
 
