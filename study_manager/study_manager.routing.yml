@@ -5,6 +5,8 @@ study_manager.admin_config:
     _title: 'Study Manager Configuration'
   requirements:
     _permission: 'administer study manager'
+  options:
+    _admin_route: TRUE
 
 study_manager.shared_library:
   path: '/admin/content/studies/shared-library'
@@ -13,6 +15,8 @@ study_manager.shared_library:
     _title: 'Shared Study File Library'
   requirements:
     _permission: 'manage shared study library'
+  options:
+    _admin_route: TRUE
 
 entity.study.add_form:
   path: '/study/add'
@@ -21,6 +25,8 @@ entity.study.add_form:
     _title: 'Add Study'
   requirements:
     _permission: 'create studies'
+  options:
+    _admin_route: TRUE
 
 entity.study.collection:
   path: '/admin/content/studies'
@@ -29,6 +35,8 @@ entity.study.collection:
     _title: 'Studies'
   requirements:
     _permission: 'access study overview'
+  options:
+    _admin_route: TRUE
 
 entity.study.edit_form:
   path: '/study/{study}/edit'
@@ -37,6 +45,8 @@ entity.study.edit_form:
     _title: 'Edit Study'
   requirements:
     _permission: 'edit studies'
+  options:
+    _admin_route: TRUE
 
 entity.study.canonical:
   path: '/study/{study}'
