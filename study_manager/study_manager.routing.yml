@@ -48,6 +48,20 @@ entity.study.edit_form:
   options:
     _admin_route: TRUE
 
+study_manager.file_download:
+  path: '/study/{study}/download/{field_name}/{file}'
+  defaults:
+    _controller: '\Drupal\study_manager\Controller\StudyFileDownloadController::download'
+  requirements:
+    _access: 'TRUE'
+    field_name: 'files|private_comparison_files'
+  options:
+    parameters:
+      study:
+        type: 'entity:study'
+      file:
+        type: 'entity:file'
+
 entity.study.canonical:
   path: '/study/{study}'
   defaults:

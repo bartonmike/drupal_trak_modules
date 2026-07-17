@@ -1,0 +1,87 @@
+<?php
+
+/**
+ * @file
+ * Hooks for the study_manager module.
+ */
+
+use Drupal\Core\Render\BubbleableMetadata;
+
+/**
+ * Implements hook_file_download().
+ *
+ * Study Data and Private Comparison Data files are encrypted at rest
+ * (Study::postSave()), so serving them through Drupal's default private
+ * file download path would just hand out ciphertext under the original
+ * MIME type. Deny that path outright for those directories; clients must
+ * use study_manager.file_download, which decrypts before streaming.
+ */
+function study_manager_file_download($uri) {
+  $file_path = \Drupal::config('study_manager.settings')->get('file_path') ?: 'studies';
+  $base = 'private://' . $file_path . '/';
+
+  if (strpos($uri, $base) !== 0) {
+    return NULL;
+  }
+
+  $relative = substr($uri, strlen($base));
+
+  // "{study_id}/comparison_data/filename.ext" -> Private Comparison Data.
+  // "{study_id}/filename.ext" (no further subdirectory) -> Study Data.
+  // Anything else (e.g. ".../reference_materials/...") is out of scope for
+  // encryption and keeps using the default, entity-access-gated download.
+  if (preg_match('#^[^/]+/comparison_data/#', $relative) || preg_match('#^[^/]+/[^/]+$#', $relative)) {
+    return -1;
+  }
+
+  return NULL;
+}
+
+/**
+ * Implements hook_token_info().
+ *
+ * The Study entity's file fields use file_directory settings like
+ * 'studies/[study:id]' (see Study::baseFieldDefinitions()). Without a
+ * registered 'study' token type, Drupal's Token API can't resolve
+ * '[study:id]' and leaves it in the path literally wherever the field's
+ * raw file_directory setting is consulted directly (e.g. JSON:API/REST file
+ * uploads, or any other path that bypasses StudyForm's explicit
+ * #upload_location override).
+ */
+function study_manager_token_info() {
+  $types['study'] = [
+    'name' => t('Study'),
+    'description' => t('Tokens related to individual studies.'),
+    'needs-data' => 'study',
+  ];
+
+  $tokens['study']['id'] = [
+    'name' => t('Study ID'),
+    'description' => t('The unique ID of the study.'),
+  ];
+
+  return [
+    'types' => $types,
+    'tokens' => $tokens,
+  ];
+}
+
+/**
+ * Implements hook_tokens().
+ */
+function study_manager_tokens($type, $tokens, array $data, array $options, BubbleableMetadata $bubbleable_metadata) {
+  $replacements = [];
+
+  if ($type === 'study' && !empty($data['study'])) {
+    /** @var \Drupal\study_manager\Entity\Study $study */
+    $study = $data['study'];
+
+    foreach ($tokens as $name => $original) {
+      if ($name === 'id') {
+        $replacements[$original] = $study->id();
+      }
+    }
+  }
+
+  return $replacements;
+}

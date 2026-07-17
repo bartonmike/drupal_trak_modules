@@ -63,3 +63,71 @@ function study_manager_update_8002() {
     $update_manager->updateFieldStorageDefinition($fields['files']);
   }
 }
+
+/**
+ * Installs the per-study encryption_key field and backfills existing
+ * studies: generates a key for any study that doesn't have one yet, and
+ * encrypts any already-uploaded Study Data / Private Comparison Data files
+ * that are still plaintext on disk.
+ */
+function study_manager_update_8003() {
+  $update_manager = \Drupal::entityDefinitionUpdateManager();
+  $entity_type = \Drupal::entityTypeManager()->getDefinition('study');
+  $fields = \Drupal\study_manager\Entity\Study::baseFieldDefinitions($entity_type);
+
+  if (!$update_manager->getFieldStorageDefinition('encryption_key', 'study')) {
+    $update_manager->installFieldStorageDefinition('encryption_key', 'study', 'study_manager', $fields['encryption_key']);
+  }
+
+  // Re-saving each study runs Study::preSave() (generates a key if missing)
+  // and Study::postSave() (encrypts any plaintext files still on disk).
+  $storage = \Drupal::entityTypeManager()->getStorage('study');
+  foreach ($storage->loadMultiple() as $study) {
+    $study->save();
+  }
+}
+
+/**
+ * Repairs File entities referenced by a Study whose URI still contains a
+ * literal, unresolved '[study:id]' token (written before study_manager
+ * registered the 'study' token type; see study_manager_token_info() /
+ * study_manager_tokens() in study_manager.module), moving them to the
+ * correct per-study path.
+ */
+function study_manager_update_8005() {
+  $storage = \Drupal::entityTypeManager()->getStorage('study');
+  /** @var \Drupal\Core\File\FileSystemInterface $file_system */
+  $file_system = \Drupal::service('file_system');
+  $logger = \Drupal::logger('study_manager');
+
+  foreach ($storage->loadMultiple() as $study) {
+    /** @var \Drupal\study_manager\Entity\Study $study */
+    foreach (['files', 'private_comparison_files', 'private_reference_files'] as $field_name) {
+      foreach ($study->get($field_name)->referencedEntities() as $file) {
+        /** @var \Drupal\file\FileInterface $file */
+        $uri = $file->getFileUri();
+        if (strpos($uri, '[study:id]') === FALSE) {
+          continue;
+        }
+
+        $corrected_uri = str_replace('[study:id]', (string) $study->id(), $uri);
+
+        try {
+          $directory = dirname($corrected_uri);
+          $file_system->prepareDirectory($directory, $file_system::CREATE_DIRECTORY | $file_system::MODIFY_PERMISSIONS);
+          $moved_uri = $file_system->move($uri, $corrected_uri, $file_system::EXISTS_RENAME);
+          $file->setFileUri($moved_uri);
+          $file->save();
+        }
+        catch (\Exception $e) {
+          $logger->error('Failed to repair file @fid (@uri) for study @study_id: @message', [
+            '@fid' => $file->id(),
+            '@uri' => $uri,
+            '@study_id' => $study->id(),
+            '@message' => $e->getMessage(),
+          ]);
+        }
+      }
+    }
+  }
+}

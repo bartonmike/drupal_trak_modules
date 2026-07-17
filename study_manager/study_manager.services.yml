@@ -1,0 +1,4 @@
+services:
+  study_manager.encryption:
+    class: Drupal\study_manager\Service\StudyEncryptionService
+    arguments: ['@private_key']

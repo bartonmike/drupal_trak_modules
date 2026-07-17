@@ -82,13 +82,47 @@ class StudyAuthController extends ControllerBase {
       ], 403);
     }
 
-    $file_uris = function (string $field_name) use ($study) {
-      $uris = [];
+    // Study-owned private uploads are physically stored at
+    // "private://{config file_path}/{study_id}/...". The API exposes them
+    // as relative paths rooted at a fixed "study_data" prefix regardless of
+    // that config, e.g. "study_data/42/comparison_data/beyond_toxics.csv".
+    $config_file_path = $this->config('study_manager.settings')->get('file_path') ?: 'studies';
+    $private_prefix = 'private://' . $config_file_path . '/';
+
+    $private_paths = function (string $field_name) use ($study, $private_prefix) {
+      $paths = [];
       foreach ($study->get($field_name)->referencedEntities() as $file) {
-        $uris[] = $file->getFileUri();
+        $uri = $file->getFileUri();
+        if (strpos($uri, $private_prefix) === 0) {
+          $paths[] = 'study_data/' . substr($uri, strlen($private_prefix));
+        }
+        else {
+          // Fallback for a URI that doesn't match the expected prefix
+          // (e.g. legacy content not yet repaired by update_8005).
+          $paths[] = 'study_data/' . $study->id() . '/' . $file->getFilename();
+        }
       }
-      return $uris;
+      return $paths;
     };
+
+    // Shared-library selections are physically stored at
+    // "private://study_manager/shared_library/{category}/...". The API
+    // exposes them flattened under a fixed "shared_data" prefix.
+    $shared_paths = function (string $field_name) use ($study) {
+      $paths = [];
+      foreach ($study->get($field_name)->referencedEntities() as $file) {
+        $paths[] = 'shared_data/' . $file->getFilename();
+      }
+      return $paths;
+    };
+
+    // Study Data and Private Comparison Data are encrypted at rest with a
+    // per-study key (see Study::postSave()). Ensure the key is persisted,
+    // then hand it to the caller so it can decrypt the files itself.
+    if (empty($study->get('encryption_key')->value)) {
+      $study->save();
+    }
+    $file_key = base64_encode($study->getRawEncryptionKey());
 
     return new JsonResponse([
       'valid_session' => TRUE,
@@ -98,21 +132,22 @@ class StudyAuthController extends ControllerBase {
       'status' => $study->get('status')->value,
       // File Uploads: private to this study.
       'study_files' => [
-        'file_key' => '',
-        'files' => $file_uris('files'),
+        'file_key' => $file_key,
+        'files' => $private_paths('files'),
       ],
-      'private_comparison_data' => [
-        'files' => $file_uris('private_comparison_files'),
+      'uploaded_comp_data' => [
+        'file_key' => $file_key,
+        'files' => $private_paths('private_comparison_files'),
       ],
       'private_reference_materials' => [
-        'files' => $file_uris('private_reference_files'),
+        'files' => $private_paths('private_reference_files'),
       ],
       // File Selection: picked from the shared library.
       'selected_comparison_data' => [
-        'files' => $file_uris('selected_comparison_files'),
+        'files' => $shared_paths('selected_comparison_files'),
       ],
       'selected_reference_materials' => [
-        'files' => $file_uris('selected_reference_files'),
+        'files' => $shared_paths('selected_reference_files'),
       ],
     ]);
   }

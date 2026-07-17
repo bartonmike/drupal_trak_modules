@@ -4,6 +4,7 @@ namespace Drupal\study_manager\Entity;
 
 use Drupal\Core\Entity\ContentEntityBase;
 use Drupal\Core\Entity\EntityChangedTrait;
+use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\user\EntityOwnerTrait;
@@ -43,9 +44,15 @@ use Drupal\user\EntityOwnerInterface;
  * )
  */
 class Study extends ContentEntityBase implements EntityOwnerInterface {
-  
+
   use EntityChangedTrait;
   use EntityOwnerTrait;
+
+  /**
+   * Names of the file fields whose uploads are encrypted at rest with the
+   * study's own key. See study_manager.services.yml (study_manager.encryption).
+   */
+  const ENCRYPTED_FILE_FIELDS = ['files', 'private_comparison_files'];
 
   /**
    * {@inheritdoc}
@@ -96,7 +103,7 @@ class Study extends ContentEntityBase implements EntityOwnerInterface {
       ->setSetting('uri_scheme', 'private')
       ->setDisplayOptions('view', [
         'label' => 'above',
-        'type' => 'file_default',
+        'type' => 'study_manager_encrypted_file_link',
         'weight' => 5,
       ])
       ->setDisplayOptions('form', [
@@ -115,7 +122,7 @@ class Study extends ContentEntityBase implements EntityOwnerInterface {
       ->setSetting('uri_scheme', 'private')
       ->setDisplayOptions('view', [
         'label' => 'above',
-        'type' => 'file_default',
+        'type' => 'study_manager_encrypted_file_link',
         'weight' => 6,
       ])
       ->setDisplayOptions('form', [
@@ -206,6 +213,13 @@ class Study extends ContentEntityBase implements EntityOwnerInterface {
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayConfigurable('view', TRUE);
 
+    $fields['encryption_key'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('Encryption Key'))
+      ->setDescription(t('Wrapped per-study key used to encrypt private study files. Never displayed.'))
+      ->setSetting('max_length', 255)
+      ->setSetting('text_processing', 0)
+      ->setReadOnly(TRUE);
+
     $fields['created'] = BaseFieldDefinition::create('created')
       ->setLabel(t('Created'))
       ->setDescription(t('The time that the study was created.'));
@@ -237,6 +251,70 @@ class Study extends ContentEntityBase implements EntityOwnerInterface {
   public function setTitle($title) {
     $this->set('title', $title);
     return $this;
+  }
+
+  /**
+   * Generates and sets a wrapped encryption key if this study doesn't have
+   * one yet. Only mutates the in-memory entity; the caller is responsible
+   * for saving it (preSave() below does this as part of the normal save
+   * cycle).
+   */
+  protected function ensureEncryptionKey(): void {
+    if (empty($this->get('encryption_key')->value)) {
+      /** @var \Drupal\study_manager\Service\StudyEncryptionService $service */
+      $service = \Drupal::service('study_manager.encryption');
+      $raw = $service->generateStudyKey();
+      $this->set('encryption_key', $service->wrapKey($raw));
+    }
+  }
+
+  /**
+   * Gets this study's raw (unwrapped) encryption key.
+   *
+   * The study must already have been saved at least once; call save() first
+   * if $study->get('encryption_key')->value is empty.
+   */
+  public function getRawEncryptionKey(): string {
+    $wrapped = $this->get('encryption_key')->value;
+    if (empty($wrapped)) {
+      throw new \LogicException('This study has no encryption key yet; save the study before requesting its key.');
+    }
+    return \Drupal::service('study_manager.encryption')->unwrapKey($wrapped);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function preSave(EntityStorageInterface $storage) {
+    parent::preSave($storage);
+    $this->ensureEncryptionKey();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function postSave(EntityStorageInterface $storage, $update = TRUE) {
+    parent::postSave($storage, $update);
+
+    /** @var \Drupal\study_manager\Service\StudyEncryptionService $service */
+    $service = \Drupal::service('study_manager.encryption');
+    $raw_key = $this->getRawEncryptionKey();
+
+    foreach (self::ENCRYPTED_FILE_FIELDS as $field_name) {
+      foreach ($this->get($field_name)->referencedEntities() as $file) {
+        /** @var \Drupal\file\FileInterface $file */
+        $uri = $file->getFileUri();
+        $contents = file_get_contents($uri);
+        if ($contents === FALSE || $service->isEncrypted($contents)) {
+          continue;
+        }
+
+        $encrypted = $service->encryptFileContents($raw_key, $contents);
+        file_put_contents($uri, $encrypted);
+        $file->setSize(strlen($encrypted));
+        $file->save();
+      }
+    }
   }
 
 }
