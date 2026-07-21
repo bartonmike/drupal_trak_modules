@@ -31,21 +31,32 @@ class StudyForm extends ContentEntityForm {
     // can't be conflated.
     $upload_fields = [
       'files' => [
-        'location' => "private://{$file_path}/{$entity_id}/study_data",
+        'location' => "private://{$file_path}/study_data/{$entity_id}/study_data",
         'extensions' => 'csv xlsx',
       ],
       'private_comparison_files' => [
-        'location' => "private://{$file_path}/{$entity_id}/comparison_data",
+        'location' => "private://{$file_path}/study_data/{$entity_id}/comparison_data",
         'extensions' => 'csv xlsx',
       ],
       'private_reference_files' => [
-        'location' => "private://{$file_path}/{$entity_id}/reference_materials",
+        'location' => "private://{$file_path}/study_data/{$entity_id}/reference_materials",
         'extensions' => 'pdf png jpg',
       ],
     ];
 
+    // Ensure every upload directory exists before the widget can try to use
+    // it. AJAX uploads happen as soon as a file is chosen, well before the
+    // entity is saved, so this can't wait for save() - and it has to run on
+    // every form build (not just entity creation) in case the file_path
+    // config changed after the study already existed, or a directory was
+    // never created.
+    /** @var \Drupal\Core\File\FileSystemInterface $file_system */
+    $file_system = \Drupal::service('file_system');
+
     foreach ($upload_fields as $field_name => $settings) {
       if (isset($form[$field_name]['widget'])) {
+        $file_system->prepareDirectory($settings['location'], $file_system::CREATE_DIRECTORY | $file_system::MODIFY_PERMISSIONS);
+
         // These fields are unlimited-cardinality, so the widget is rendered
         // as a set of per-delta elements (0, 1, ..., 'add_more'); the
         // wrapper itself carries no #upload_location. It has to be set on
