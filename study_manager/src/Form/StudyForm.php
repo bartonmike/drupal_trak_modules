@@ -96,17 +96,6 @@ class StudyForm extends ContentEntityForm {
         $this->messenger()->addMessage($this->t('Created the %label Study.', [
           '%label' => $entity->label(),
         ]));
-        
-        // Create the upload directories for this study.
-        $config = \Drupal::config('study_manager.settings');
-        $file_path = $config->get('file_path') ?: 'studies';
-        $base_directory = "private://{$file_path}/" . $entity->id();
-
-        /** @var \Drupal\Core\File\FileSystemInterface $file_system */
-        $file_system = \Drupal::service('file_system');
-        foreach ([$base_directory, "{$base_directory}/comparison_data", "{$base_directory}/reference_materials"] as $directory) {
-          $file_system->prepareDirectory($directory, $file_system::CREATE_DIRECTORY | $file_system::MODIFY_PERMISSIONS);
-        }
 
         break;
 
