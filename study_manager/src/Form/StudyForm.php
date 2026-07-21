@@ -4,6 +4,7 @@ namespace Drupal\study_manager\Form;
 
 use Drupal\Core\Entity\ContentEntityForm;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Element;
 
 /**
  * Form controller for Study edit forms.
@@ -30,7 +31,7 @@ class StudyForm extends ContentEntityForm {
     // can't be conflated.
     $upload_fields = [
       'files' => [
-        'location' => "private://{$file_path}/{$entity_id}",
+        'location' => "private://{$file_path}/{$entity_id}/study_data",
         'extensions' => 'csv xlsx',
       ],
       'private_comparison_files' => [
@@ -44,11 +45,18 @@ class StudyForm extends ContentEntityForm {
     ];
 
     foreach ($upload_fields as $field_name => $settings) {
-      if (isset($form[$field_name])) {
-        $form[$field_name]['widget']['#upload_location'] = $settings['location'];
-        $form[$field_name]['widget']['#upload_validators'] = [
-          'file_validate_extensions' => [$settings['extensions']],
-        ];
+      if (isset($form[$field_name]['widget'])) {
+        // These fields are unlimited-cardinality, so the widget is rendered
+        // as a set of per-delta elements (0, 1, ..., 'add_more'); the
+        // wrapper itself carries no #upload_location. It has to be set on
+        // each delta element or the field definition's hardcoded default
+        // directory silently wins instead of the admin-configured one.
+        foreach (Element::children($form[$field_name]['widget']) as $delta) {
+          if (is_numeric($delta)) {
+            $form[$field_name]['widget'][$delta]['#upload_location'] = $settings['location'];
+            $form[$field_name]['widget'][$delta]['#upload_validators']['file_validate_extensions'] = [$settings['extensions']];
+          }
+        }
       }
     }
 
