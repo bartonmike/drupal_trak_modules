@@ -94,7 +94,7 @@ class StudyAuthController extends ControllerBase {
       foreach ($study->get($field_name)->referencedEntities() as $file) {
         $uri = $file->getFileUri();
         if (strpos($uri, $private_prefix) === 0) {
-          $paths[] = 'study_data/' . substr($uri, strlen($private_prefix));
+          $paths[] = '' . substr($uri, strlen($private_prefix));
         }
         else {
           // Fallback for a URI that doesn't match the expected prefix
