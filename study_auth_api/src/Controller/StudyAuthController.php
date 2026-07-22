@@ -94,12 +94,14 @@ class StudyAuthController extends ControllerBase {
       foreach ($study->get($field_name)->referencedEntities() as $file) {
         $uri = $file->getFileUri();
         if (strpos($uri, $private_prefix) === 0) {
+          #$paths[] = 'study_data/' . substr($uri, strlen($private_prefix));
           $paths[] = '' . substr($uri, strlen($private_prefix));
         }
         else {
           // Fallback for a URI that doesn't match the expected prefix
           // (e.g. legacy content not yet repaired by update_8005).
-          $paths[] = 'study_data/' . $study->id() . '/' . $file->getFilename();
+          #$paths[] = 'study_data/' . $study->id() . '/' . $file->getFilename();
+          $paths[] = '' . $study->id() . '/' . $file->getFilename();
         }
       }
       return $paths;
@@ -111,7 +113,8 @@ class StudyAuthController extends ControllerBase {
     $shared_paths = function (string $field_name) use ($study) {
       $paths = [];
       foreach ($study->get($field_name)->referencedEntities() as $file) {
-        $paths[] = 'shared_data/' . $file->getFilename();
+        #$paths[] = 'shared_data/' . $file->getFilename();
+        $paths[] = '' . $file->getFilename();
       }
       return $paths;
     };
