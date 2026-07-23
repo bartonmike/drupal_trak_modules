@@ -153,6 +153,9 @@ class StudyAuthController extends ControllerBase {
       'selected_reference_materials' => [
         'files' => $shared_paths('selected_reference_files'),
       ],
+      
+	      'session_id' => $session_id,
+        'hashed_session_id' => $hashed_sid,
     ]);
   }
 
