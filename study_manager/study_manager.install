@@ -59,7 +59,13 @@ function study_manager_update_8002() {
   }
 
   // The 'files' field was relabeled to "Study Data" and restricted to CSV/XLSX.
+  // baseFieldDefinitions() is called directly above (not via the entity field
+  // manager), so the returned definitions never got their name/entity type
+  // set - updateFieldStorageDefinition() needs that to look up the currently
+  // installed definition, or it fails with a null $original.
   if ($update_manager->getFieldStorageDefinition('files', 'study')) {
+    $fields['files']->setName('files');
+    $fields['files']->setTargetEntityTypeId('study');
     $update_manager->updateFieldStorageDefinition($fields['files']);
   }
 }
