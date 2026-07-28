@@ -22,7 +22,13 @@ class StudyController extends ControllerBase {
    */
   public function view(Study $study) {
     $view_builder = $this->entityTypeManager()->getViewBuilder('study');
-    return $view_builder->view($study, 'full');
+    $build = $view_builder->view($study, 'full');
+
+    return [
+      '#prefix' => '<div style="padding-left: 20px; padding-right: 20px;">',
+      '#suffix' => '</div>',
+      'study' => $build,
+    ];
   }
 
 }

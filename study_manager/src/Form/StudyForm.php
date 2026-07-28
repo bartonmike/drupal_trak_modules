@@ -97,6 +97,35 @@ class StudyForm extends ContentEntityForm {
           '%label' => $entity->label(),
         ]));
 
+        // Files uploaded via AJAX before this entity had an ID were written
+        // under a placeholder ".../new/..." directory (see buildForm()).
+        // Now that a real ID exists, move them into the study's actual
+        // directory and repoint the file entities at the new URI.
+        $config = \Drupal::config('study_manager.settings');
+        $file_path = $config->get('file_path') ?: 'studies';
+        $old_base = "private://{$file_path}/study_data/new";
+        $new_base = "private://{$file_path}/study_data/" . $entity->id();
+
+        /** @var \Drupal\Core\File\FileSystemInterface $file_system */
+        $file_system = \Drupal::service('file_system');
+
+        foreach (['files', 'private_comparison_files', 'private_reference_files'] as $field_name) {
+          foreach ($entity->get($field_name)->referencedEntities() as $file) {
+            /** @var \Drupal\file\FileInterface $file */
+            $uri = $file->getFileUri();
+            if (strpos($uri, $old_base . '/') !== 0) {
+              continue;
+            }
+
+            $new_uri = $new_base . substr($uri, strlen($old_base));
+            $directory = dirname($new_uri);
+            $file_system->prepareDirectory($directory, $file_system::CREATE_DIRECTORY | $file_system::MODIFY_PERMISSIONS);
+            $moved_uri = $file_system->move($uri, $new_uri, $file_system::EXISTS_RENAME);
+            $file->setFileUri($moved_uri);
+            $file->save();
+          }
+        }
+
         break;
 
       default:
