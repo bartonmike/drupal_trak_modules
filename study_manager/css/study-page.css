@@ -16,12 +16,7 @@
   margin: 0 auto;
 }
 
-/*@media (prefers-color-scheme: dark) {
-  .study-page {
-    --study-border: rgba(255, 255, 255, 0.12);
-    --study-muted: #9ca3af;
-  }
-}*/
+
 
 .study-page__header {
   display: flex;
