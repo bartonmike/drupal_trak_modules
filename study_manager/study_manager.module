@@ -5,7 +5,64 @@
  * Hooks for the study_manager module.
  */
 
+use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Render\BubbleableMetadata;
+
+/**
+ * Implements hook_theme().
+ */
+function study_manager_theme($existing, $type, $theme, $path) {
+  return [
+    'study_manager_study_page' => [
+      'variables' => [
+        'title' => NULL,
+        'description' => NULL,
+        'status_value' => NULL,
+        'status_label' => NULL,
+        'study_data_files' => [],
+        'reference_files' => [],
+        'comparison_data' => NULL,
+        'reference_resources' => NULL,
+        'participants' => NULL,
+      ],
+    ],
+  ];
+}
+
+/**
+ * Implements hook_entity_base_field_info().
+ *
+ * Adds a title/description to the core File entity, used only for files
+ * uploaded to the shared library (see SharedLibraryForm). Study-owned
+ * private uploads use the file field's own built-in 'description_field'
+ * setting instead (see Study::baseFieldDefinitions()); shared library files
+ * are plain File entities with no field of their own to carry this, so it's
+ * added here instead of introducing a new entity type just to hold it.
+ */
+function study_manager_entity_base_field_info(EntityTypeInterface $entity_type) {
+  if ($entity_type->id() !== 'file') {
+    return [];
+  }
+
+  $fields = [];
+
+  $fields['study_manager_title'] = BaseFieldDefinition::create('string')
+    ->setLabel(t('Title'))
+    ->setDescription(t('Display title shown on study pages for shared library files.'))
+    ->setSetting('max_length', 255)
+    ->setDisplayConfigurable('form', TRUE)
+    ->setDisplayConfigurable('view', TRUE);
+
+  $fields['study_manager_description'] = BaseFieldDefinition::create('string')
+    ->setLabel(t('Description'))
+    ->setDescription(t('Short description shown on study pages for shared library files.'))
+    ->setSetting('max_length', 255)
+    ->setDisplayConfigurable('form', TRUE)
+    ->setDisplayConfigurable('view', TRUE);
+
+  return $fields;
+}
 
 /**
  * Implements hook_file_download().
@@ -15,10 +72,43 @@ use Drupal\Core\Render\BubbleableMetadata;
  * file download path would just hand out ciphertext under the original
  * MIME type. Deny that path outright for those directories; clients must
  * use study_manager.file_download, which decrypts before streaming.
+ *
+ * Private Reference Materials are not encrypted, so they're explicitly
+ * granted here (gated on the owning study's view access) rather than left
+ * to fall through to Drupal's default deny for private:// files.
+ *
+ * Uploads are written under a "study_data/{study_id}/{category}/..." layout
+ * (see StudyForm::buildForm()), not directly under "{study_id}/..." - the
+ * path matching below has to mirror that exactly, or none of this fires.
+ *
+ * Shared library files (see SharedLibrarySelection::getDirectory()) live
+ * under a separate "study_manager/shared_library/{category}/..." prefix,
+ * not scoped to any one study, so they're handled as a distinct case: not
+ * encrypted, and gated on general "view studies" access rather than any
+ * specific study's access.
  */
 function study_manager_file_download($uri) {
+  $shared_library_base = 'private://study_manager/shared_library/';
+  if (strpos($uri, $shared_library_base) === 0) {
+    if (!\Drupal::currentUser()->hasPermission('view studies')) {
+      return -1;
+    }
+
+    $files = \Drupal::entityTypeManager()->getStorage('file')->loadByProperties(['uri' => $uri]);
+    $file = reset($files);
+    if (!$file) {
+      return -1;
+    }
+
+    return [
+      'Content-Type' => $file->getMimeType(),
+      'Content-Length' => (string) $file->getSize(),
+      'Content-Disposition' => 'inline; filename="' . $file->getFilename() . '"',
+    ];
+  }
+
   $file_path = \Drupal::config('study_manager.settings')->get('file_path') ?: 'studies';
-  $base = 'private://' . $file_path . '/';
+  $base = 'private://' . $file_path . '/study_data/';
 
   if (strpos($uri, $base) !== 0) {
     return NULL;
@@ -26,15 +116,35 @@ function study_manager_file_download($uri) {
 
   $relative = substr($uri, strlen($base));
 
-  // "{study_id}/comparison_data/filename.ext" -> Private Comparison Data.
-  // "{study_id}/filename.ext" (no further subdirectory) -> Study Data.
-  // Anything else (e.g. ".../reference_materials/...") is out of scope for
-  // encryption and keeps using the default, entity-access-gated download.
-  if (preg_match('#^[^/]+/comparison_data/#', $relative) || preg_match('#^[^/]+/[^/]+$#', $relative)) {
+  if (!preg_match('#^([^/]+)/(study_data|comparison_data|reference_materials)/#', $relative, $matches)) {
+    return NULL;
+  }
+  [, $study_id, $category] = $matches;
+
+  // Study Data and Private Comparison Data are encrypted at rest; only
+  // study_manager.file_download (which decrypts first) may serve them.
+  if ($category === 'study_data' || $category === 'comparison_data') {
     return -1;
   }
 
-  return NULL;
+  // Private Reference Materials: not encrypted, but still gated on the
+  // owning study's view access.
+  $study = \Drupal::entityTypeManager()->getStorage('study')->load($study_id);
+  if (!$study || !$study->access('view')) {
+    return -1;
+  }
+
+  $files = \Drupal::entityTypeManager()->getStorage('file')->loadByProperties(['uri' => $uri]);
+  $file = reset($files);
+  if (!$file) {
+    return -1;
+  }
+
+  return [
+    'Content-Type' => $file->getMimeType(),
+    'Content-Length' => (string) $file->getSize(),
+    'Content-Disposition' => 'inline; filename="' . $file->getFilename() . '"',
+  ];
 }
 
 /**

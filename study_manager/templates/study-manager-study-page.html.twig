@@ -1,0 +1,157 @@
+{#
+  Available variables:
+  - title, description: the study's own title/description fields.
+  - status_value, status_label: e.g. 'active', 'Active'.
+  - study_data_files, reference_files: lists of {name, meta, size, url, action_label, icon}.
+  - comparison_data, reference_resources: {items: [{title, meta, url, action_label, icon}], browse_url}.
+  - participants: {add_url, list_url} or null if the viewer has no manage access.
+#}
+<div class="study-page">
+  <div class="study-page__header">
+    <div>
+      <p class="study-page__eyebrow">{{ 'Research Study'|t }}</p>
+      <h1 class="study-page__title">{{ title }}</h1>
+      {% if description %}
+        <p class="study-page__description">{{ description }}</p>
+      {% endif %}
+    </div>
+    {% if status_label %}
+      <div class="study-page__status">
+        <span class="study-page__status-label">{{ 'Study status'|t }}</span><br>
+        <span class="study-page__status-badge study-page__status-badge--{{ status_value }}">{{ status_label }}</span>
+      </div>
+    {% endif %}
+  </div>
+
+  <hr class="study-page__divider">
+
+  <div class="study-section">
+    <div class="study-section__header">
+      <div>
+        <h2 class="study-section__title">{{ 'Study data files'|t }}</h2>
+        <p class="study-section__subtitle">{{ 'Data uploaded specifically for this study.'|t }}</p>
+      </div>
+      <span class="study-section__count">{{ study_data_files|length }} {{ 'files'|t }}</span>
+    </div>
+    {% if study_data_files %}
+      <div class="file-list">
+        {% for file in study_data_files %}
+          <div class="file-row">
+            <div class="file-row__icon">{{ file.icon }}</div>
+            <div class="file-row__info">
+              <a class="file-row__name" href="{{ file.url }}">{{ file.name }}</a>
+              {% if file.meta %}<span class="file-row__meta">{{ file.meta }}</span>{% endif %}
+            </div>
+            <div class="file-row__aside">
+              {% if file.size %}<span class="file-row__size">{{ file.size }}</span>{% endif %}
+              <a class="file-row__action" href="{{ file.url }}">{{ file.action_label }}</a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="study-empty">{{ 'No study data files yet.'|t }}</p>
+    {% endif %}
+  </div>
+
+  <div class="study-section">
+    <div class="study-section__header">
+      <div>
+        <h2 class="study-section__title">{{ 'Study reference files'|t }}</h2>
+        <p class="study-section__subtitle">{{ 'Infographics, images, documentation, and other study materials.'|t }}</p>
+      </div>
+      <span class="study-section__count">{{ reference_files|length }} {{ 'files'|t }}</span>
+    </div>
+    {% if reference_files %}
+      <div class="file-list">
+        {% for file in reference_files %}
+          <div class="file-row">
+            <div class="file-row__icon">{{ file.icon }}</div>
+            <div class="file-row__info">
+              <a class="file-row__name" href="{{ file.url }}">{{ file.name }}</a>
+              {% if file.meta %}<span class="file-row__meta">{{ file.meta }}</span>{% endif %}
+            </div>
+            <div class="file-row__aside">
+              {% if file.size %}<span class="file-row__size">{{ file.size }}</span>{% endif %}
+              <a class="file-row__action" href="{{ file.url }}">{{ file.action_label }}</a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="study-empty">{{ 'No reference files yet.'|t }}</p>
+    {% endif %}
+  </div>
+
+  {% if comparison_data %}
+    <div class="study-section">
+      <div class="study-section__header">
+        <div>
+          <h2 class="study-section__title">{{ 'Selected comparison data'|t }}</h2>
+          <p class="study-section__subtitle">{{ 'Public datasets selected for comparison with this study.'|t }}</p>
+        </div>
+        {% if comparison_data.browse_url %}
+          <a class="study-btn" href="{{ comparison_data.browse_url }}">{{ 'Browse public data'|t }}</a>
+        {% endif %}
+      </div>
+      {% if comparison_data.items %}
+        <div class="card-grid">
+          {% for item in comparison_data.items %}
+            <div class="data-card">
+              <div class="data-card__icon">{{ item.icon }}</div>
+              <div>
+                <p class="data-card__title">{{ item.title }}</p>
+                {% if item.meta %}<p class="data-card__meta">{{ item.meta }}</p>{% endif %}
+                <a class="data-card__link" href="{{ item.url }}">{{ item.action_label }}</a>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="study-empty">{{ 'No comparison data selected yet.'|t }}</p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if reference_resources %}
+    <div class="study-section">
+      <div class="study-section__header">
+        <div>
+          <h2 class="study-section__title">{{ 'Selected public reference files'|t }}</h2>
+          <p class="study-section__subtitle">{{ 'Public resources chosen to help interpret or communicate study results.'|t }}</p>
+        </div>
+        {% if reference_resources.browse_url %}
+          <a class="study-btn" href="{{ reference_resources.browse_url }}">{{ 'Browse reference files'|t }}</a>
+        {% endif %}
+      </div>
+      {% if reference_resources.items %}
+        <div class="card-grid">
+          {% for item in reference_resources.items %}
+            <div class="data-card">
+              <div class="data-card__icon">{{ item.icon }}</div>
+              <div>
+                <p class="data-card__title">{{ item.title }}</p>
+                {% if item.meta %}<p class="data-card__meta">{{ item.meta }}</p>{% endif %}
+                <a class="data-card__link" href="{{ item.url }}">{{ item.action_label }}</a>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="study-empty">{{ 'No reference resources selected yet.'|t }}</p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if participants %}
+    <div class="study-section study-page__participants">
+      <div class="study-section__header">
+        <div>
+          <h2 class="study-section__title">{{ 'Manage Participants'|t }}</h2>
+        </div>
+      </div>
+      <a class="study-btn study-btn--primary" href="{{ participants.add_url }}">{{ 'Add Participants'|t }}</a>
+      <a class="study-btn" href="{{ participants.list_url }}">{{ 'View / Manage Participant List'|t }}</a>
+    </div>
+  {% endif %}
+</div>

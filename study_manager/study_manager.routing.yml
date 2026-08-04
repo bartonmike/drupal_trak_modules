@@ -65,7 +65,48 @@ study_manager.file_download:
 entity.study.canonical:
   path: '/study/{study}'
   defaults:
-    _entity_view: 'study.full'
+    _controller: '\Drupal\study_manager\Controller\StudyController::view'
     _title_callback: '\Drupal\study_manager\Controller\StudyController::title'
   requirements:
     _entity_access: 'study.view'
+  options:
+    parameters:
+      study:
+        type: 'entity:study'
+
+study_manager.participants_add:
+  path: '/study/{study}/participants/add'
+  defaults:
+    _form: '\Drupal\study_manager\Form\ParticipantUploadForm'
+    _title: 'Add Study Participants'
+  requirements:
+    _entity_access: 'study.update'
+  options:
+    parameters:
+      study:
+        type: 'entity:study'
+
+study_manager.participants_list:
+  path: '/study/{study}/participants'
+  defaults:
+    _controller: '\Drupal\study_manager\Controller\StudyParticipantController::list'
+    _title: 'Study Participants'
+  requirements:
+    _entity_access: 'study.update'
+  options:
+    parameters:
+      study:
+        type: 'entity:study'
+
+study_manager.participants_remove:
+  path: '/study/{study}/participants/{mapping_id}/remove'
+  defaults:
+    _form: '\Drupal\study_manager\Form\ParticipantRemoveForm'
+    _title: 'Remove Study Participant'
+  requirements:
+    _entity_access: 'study.update'
+    mapping_id: '\d+'
+  options:
+    parameters:
+      study:
+        type: 'entity:study'

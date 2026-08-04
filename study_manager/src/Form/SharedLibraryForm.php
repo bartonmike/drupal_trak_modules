@@ -86,18 +86,44 @@ class SharedLibraryForm extends FormBase {
         ->condition('uri', SharedLibrarySelection::getDirectory($category) . '/', 'STARTS_WITH')
         ->execute();
 
-      $rows = [];
-      foreach ($file_storage->loadMultiple($ids) as $file) {
-        /** @var \Drupal\file\FileInterface $file */
-        $rows[$file->id()] = $file->getFilename();
-      }
+      $files = $file_storage->loadMultiple($ids);
 
-      if ($rows) {
+      if ($files) {
         $form[$category]['existing_' . $category] = [
-          '#type' => 'checkboxes',
-          '#title' => $this->t('Existing @label files (check to delete)', ['@label' => $label]),
-          '#options' => $rows,
+          '#type' => 'table',
+          '#header' => [
+            $this->t('Filename'),
+            $this->t('Title'),
+            $this->t('Description'),
+            $this->t('Delete'),
+          ],
         ];
+
+        foreach ($files as $file) {
+          /** @var \Drupal\file\FileInterface $file */
+          $fid = $file->id();
+          $form[$category]['existing_' . $category][$fid]['filename'] = [
+            '#type' => 'item',
+            '#markup' => $file->getFilename(),
+          ];
+          $form[$category]['existing_' . $category][$fid]['title'] = [
+            '#type' => 'textfield',
+            '#title' => $this->t('Title'),
+            '#title_display' => 'invisible',
+            '#default_value' => $file->get('study_manager_title')->value,
+          ];
+          $form[$category]['existing_' . $category][$fid]['description'] = [
+            '#type' => 'textfield',
+            '#title' => $this->t('Description'),
+            '#title_display' => 'invisible',
+            '#default_value' => $file->get('study_manager_description')->value,
+          ];
+          $form[$category]['existing_' . $category][$fid]['delete'] = [
+            '#type' => 'checkbox',
+            '#title' => $this->t('Delete'),
+            '#title_display' => 'invisible',
+          ];
+        }
       }
       else {
         $form[$category]['existing_' . $category] = [
@@ -134,14 +160,23 @@ class SharedLibraryForm extends FormBase {
         }
       }
 
-      // Delete files that were checked for removal.
-      $to_delete = array_filter($form_state->getValue('existing_' . $category) ?: []);
-      foreach ($to_delete as $fid) {
+      // Update title/description, and delete rows that were checked.
+      $existing_rows = $form_state->getValue('existing_' . $category) ?: [];
+      foreach ($existing_rows as $fid => $row) {
         $file = $file_storage->load($fid);
-        if ($file) {
+        if (!$file) {
+          continue;
+        }
+
+        if (!empty($row['delete'])) {
           \Drupal::service('file.usage')->delete($file, 'study_manager', 'shared_library', $file->id());
           $file->delete();
+          continue;
         }
+
+        $file->set('study_manager_title', $row['title']);
+        $file->set('study_manager_description', $row['description']);
+        $file->save();
       }
     }
 

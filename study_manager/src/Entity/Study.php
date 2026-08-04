@@ -101,6 +101,7 @@ class Study extends ContentEntityBase implements EntityOwnerInterface {
       ->setSetting('file_directory', 'studies/[study:id]')
       ->setSetting('file_extensions', 'csv xlsx')
       ->setSetting('uri_scheme', 'private')
+      ->setSetting('description_field', TRUE)
       ->setDisplayOptions('view', [
         'label' => 'above',
         'type' => 'study_manager_encrypted_file_link',
@@ -120,6 +121,7 @@ class Study extends ContentEntityBase implements EntityOwnerInterface {
       ->setSetting('file_directory', 'studies/[study:id]/comparison_data')
       ->setSetting('file_extensions', 'csv xlsx')
       ->setSetting('uri_scheme', 'private')
+      ->setSetting('description_field', TRUE)
       ->setDisplayOptions('view', [
         'label' => 'above',
         'type' => 'study_manager_encrypted_file_link',
@@ -139,6 +141,7 @@ class Study extends ContentEntityBase implements EntityOwnerInterface {
       ->setSetting('file_directory', 'studies/[study:id]/reference_materials')
       ->setSetting('file_extensions', 'pdf png jpg')
       ->setSetting('uri_scheme', 'private')
+      ->setSetting('description_field', TRUE)
       ->setDisplayOptions('view', [
         'label' => 'above',
         'type' => 'file_default',

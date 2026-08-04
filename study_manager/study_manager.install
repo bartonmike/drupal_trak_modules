@@ -31,6 +31,59 @@ function study_manager_uninstall() {
 }
 
 /**
+ * Implements hook_schema().
+ *
+ * Maps participant user accounts to studies. Not modeled as a content
+ * entity: there's no need for per-mapping canonical URLs, revisions, or
+ * translations - just a lightweight, study-scoped linking table. Access to
+ * everything that reads/writes it is gated through the owning study's own
+ * entity access (see study_manager.routing.yml), not a handler of its own.
+ */
+function study_manager_schema() {
+  $schema['study_participants'] = [
+    'description' => 'Maps participant user accounts to studies via a per-study participant ID.',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary key.',
+      ],
+      'study_id' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'The {study}.id this participant belongs to.',
+      ],
+      'uid' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'The {users}.uid of the participant account.',
+      ],
+      'participant_id' => [
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'description' => 'Researcher-assigned ID correlating this participant to rows in study data files.',
+      ],
+      'created' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'Timestamp this mapping was created.',
+      ],
+    ],
+    'primary key' => ['id'],
+    'indexes' => [
+      'study_id' => ['study_id'],
+      'uid' => ['uid'],
+    ],
+    'unique keys' => [
+      'study_participant_id' => ['study_id', 'participant_id'],
+    ],
+  ];
+
+  return $schema;
+}
+
+/**
  * Install the Study entity type.
  */
 function study_manager_update_8001() {
@@ -134,6 +187,108 @@ function study_manager_update_8005() {
           ]);
         }
       }
+    }
+  }
+}
+
+/**
+ * Creates the study_participants table on sites that already installed the
+ * module before it existed. Inlines the schema spec (rather than calling
+ * study_manager_schema()) so this update keeps working the same way even if
+ * the schema function itself changes later.
+ */
+function study_manager_update_8006() {
+  $schema = \Drupal::database()->schema();
+
+  if (!$schema->tableExists('study_participants')) {
+    $schema->createTable('study_participants', [
+      'description' => 'Maps participant user accounts to studies via a per-study participant ID.',
+      'fields' => [
+        'id' => [
+          'type' => 'serial',
+          'not null' => TRUE,
+          'description' => 'Primary key.',
+        ],
+        'study_id' => [
+          'type' => 'int',
+          'not null' => TRUE,
+          'description' => 'The {study}.id this participant belongs to.',
+        ],
+        'uid' => [
+          'type' => 'int',
+          'not null' => TRUE,
+          'description' => 'The {users}.uid of the participant account.',
+        ],
+        'participant_id' => [
+          'type' => 'varchar',
+          'length' => 64,
+          'not null' => TRUE,
+          'description' => 'Researcher-assigned ID correlating this participant to rows in study data files.',
+        ],
+        'created' => [
+          'type' => 'int',
+          'not null' => TRUE,
+          'description' => 'Timestamp this mapping was created.',
+        ],
+      ],
+      'primary key' => ['id'],
+      'indexes' => [
+        'study_id' => ['study_id'],
+        'uid' => ['uid'],
+      ],
+      'unique keys' => [
+        'study_participant_id' => ['study_id', 'participant_id'],
+      ],
+    ]);
+  }
+}
+
+/**
+ * Creates the "Study Participant" role assigned to accounts created via the
+ * participant mapping upload (see ParticipantUploadForm).
+ */
+function study_manager_update_8007() {
+  if (!\Drupal\user\Entity\Role::load('study_participant')) {
+    \Drupal\user\Entity\Role::create([
+      'id' => 'study_participant',
+      'label' => 'Study Participant',
+    ])->save();
+  }
+}
+
+/**
+ * Enables the per-file "description" widget on the study file fields, so
+ * researchers can add a caption (e.g. "Participant results") shown on the
+ * study page. The 'description' column already exists in the file field's
+ * schema regardless of this setting - this only formalizes the field
+ * definition change; updateFieldStorageDefinition() needs the definition to
+ * know its own name (see study_manager_update_8002()).
+ */
+function study_manager_update_8008() {
+  $update_manager = \Drupal::entityDefinitionUpdateManager();
+  $entity_type = \Drupal::entityTypeManager()->getDefinition('study');
+  $fields = \Drupal\study_manager\Entity\Study::baseFieldDefinitions($entity_type);
+
+  foreach (['files', 'private_comparison_files', 'private_reference_files'] as $field_name) {
+    if ($update_manager->getFieldStorageDefinition($field_name, 'study')) {
+      $fields[$field_name]->setName($field_name);
+      $fields[$field_name]->setTargetEntityTypeId('study');
+      $update_manager->updateFieldStorageDefinition($fields[$field_name]);
+    }
+  }
+}
+
+/**
+ * Installs the study_manager_title / study_manager_description base fields
+ * on the core File entity (see study_manager_entity_base_field_info()).
+ */
+function study_manager_update_8009() {
+  $update_manager = \Drupal::entityDefinitionUpdateManager();
+  $fields = \Drupal::service('entity_field.manager')->getBaseFieldDefinitions('file');
+
+  foreach (['study_manager_title', 'study_manager_description'] as $field_name) {
+    if (isset($fields[$field_name]) && !$update_manager->getFieldStorageDefinition($field_name, 'file')) {
+      $update_manager->installFieldStorageDefinition($field_name, 'file', 'study_manager', $fields[$field_name]);
     }
   }
 }

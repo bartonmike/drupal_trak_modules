@@ -1,0 +1,4 @@
+study_page:
+  css:
+    theme:
+      css/study-page.css: {}
