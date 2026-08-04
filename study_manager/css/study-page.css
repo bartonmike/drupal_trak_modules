@@ -135,8 +135,10 @@
   padding: 6px 16px;
   border-radius: 999px;
   border: 1px solid var(--study-border);
-  background: transparent;
-  color: inherit;
+  /*background: transparent;
+  color: inherit;*/
+  background: var(--study-badge-on_hold-fg);
+  color: #fff;
   font-size: 0.875rem;
   font-weight: 600;
   text-decoration: none;
