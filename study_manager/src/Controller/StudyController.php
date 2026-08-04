@@ -78,15 +78,15 @@ class StudyController extends ControllerBase {
     return [
       '#theme' => 'study_manager_study_page',
       '#attached' => ['library' => ['study_manager/study_page']],
-      'title' => $study->getTitle(),
-      'description' => $description,
-      'status_value' => $status_value,
-      'status_label' => $status_label,
-      'study_data_files' => $study_data_files,
-      'reference_files' => $reference_files,
-      'comparison_data' => $comparison_data,
-      'reference_resources' => $reference_resources,
-      'participants' => $participants,
+      '#title' => $study->getTitle(),
+      '#description' => $description,
+      '#status_value' => $status_value,
+      '#status_label' => $status_label,
+      '#study_data_files' => $study_data_files,
+      '#reference_files' => $reference_files,
+      '#comparison_data' => $comparison_data,
+      '#reference_resources' => $reference_resources,
+      '#participants' => $participants,
       '#cache' => [
         // Access checks above vary per-owner, not just per-permission, so
         // this has to vary by user, not merely by permission set.
