@@ -5,6 +5,7 @@
   - study_data_files, reference_files: lists of {name, meta, size, url, action_label, icon}.
   - comparison_data, reference_resources: {items: [{title, meta, url, action_label, icon}], browse_url}.
   - participants: {add_url, list_url} or null if the viewer has no manage access.
+  - build_reports_url: URL to launch the reporting tool for this study.
 #}
 <div class="study-page">
   <div class="study-page__header">
@@ -15,12 +16,15 @@
         <p class="study-page__description">{{ description }}</p>
       {% endif %}
     </div>
-    {% if status_label %}
-      <div class="study-page__status">
-        <span class="study-page__status-label">{{ 'Study status'|t }}</span><br>
-        <span class="study-page__status-badge study-page__status-badge--{{ status_value }}">{{ status_label }}</span>
-      </div>
-    {% endif %}
+    <div class="study-page__header-actions">
+      {% if status_label %}
+        <div class="study-page__status">
+          <span class="study-page__status-label">{{ 'Study status'|t }}</span><br>
+          <span class="study-page__status-badge study-page__status-badge--{{ status_value }}">{{ status_label }}</span>
+        </div>
+      {% endif %}
+      <a class="study-btn study-btn--primary" href="{{ build_reports_url }}">{{ 'Build Reports'|t }}</a>
+    </div>
   </div>
 
   <hr class="study-page__divider">

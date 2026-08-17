@@ -75,6 +75,10 @@ class StudyController extends ControllerBase {
       ];
     }
 
+    // The reporting tool is a separate application, reached by an absolute
+    // path rather than a Drupal route.
+    $build_reports_url = Url::fromUserInput('/trak', ['query' => ['study_id' => $study->id()]])->toString();
+
     return [
       '#theme' => 'study_manager_study_page',
       '#attached' => ['library' => ['study_manager/study_page']],
@@ -82,6 +86,7 @@ class StudyController extends ControllerBase {
       '#description' => $description,
       '#status_value' => $status_value,
       '#status_label' => $status_label,
+      '#build_reports_url' => $build_reports_url,
       '#study_data_files' => $study_data_files,
       '#reference_files' => $reference_files,
       '#comparison_data' => $comparison_data,

@@ -53,6 +53,14 @@
   line-height: 1.5;
 }
 
+.study-page__header-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
 .study-page__status {
   text-align: right;
   white-space: nowrap;
@@ -255,6 +263,10 @@
 
   .study-page__status {
     text-align: left;
+  }
+
+  .study-page__header-actions {
+    align-items: flex-start;
   }
 }
 

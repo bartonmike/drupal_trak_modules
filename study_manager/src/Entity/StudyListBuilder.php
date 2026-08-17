@@ -5,6 +5,7 @@ namespace Drupal\study_manager\Entity;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityListBuilder;
 use Drupal\Core\Link;
+use Drupal\Core\Url;
 
 /**
  * Defines a class to build a listing of Study entities.
@@ -20,6 +21,7 @@ class StudyListBuilder extends EntityListBuilder {
     $header['status'] = $this->t('Status');
     $header['owner'] = $this->t('Owner');
     $header['created'] = $this->t('Created');
+    $header['reports'] = $this->t('Reports');
     return $header + parent::buildHeader();
   }
 
@@ -37,7 +39,14 @@ class StudyListBuilder extends EntityListBuilder {
     $row['status'] = $entity->get('status')->value;
     $row['owner'] = $entity->getOwner()->getDisplayName();
     $row['created'] = \Drupal::service('date.formatter')->format($entity->getCreatedTime(), 'short');
-    
+    $row['reports'] = Link::fromTextAndUrl(
+      $this->t('Build Reports'),
+      Url::fromUserInput('/trak', [
+        'query' => ['study_id' => $entity->id()],
+        'attributes' => ['class' => ['button', 'button--small']],
+      ])
+    );
+
     return $row + parent::buildRow($entity);
   }
 
