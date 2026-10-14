@@ -20,6 +20,7 @@ function study_manager_theme($existing, $type, $theme, $path) {
         'description' => NULL,
         'status_value' => NULL,
         'status_label' => NULL,
+        'build_reports_url' => NULL,
         'study_data_files' => [],
         'reference_files' => [],
         'comparison_data' => NULL,
@@ -39,29 +40,63 @@ function study_manager_theme($existing, $type, $theme, $path) {
  * setting instead (see Study::baseFieldDefinitions()); shared library files
  * are plain File entities with no field of their own to carry this, so it's
  * added here instead of introducing a new entity type just to hold it.
+ *
+ * Also adds first/last name, phone, and mailing address to the core User
+ * entity, populated from the participant mapping CSV on account creation
+ * (see ParticipantUploadForm) and shown on the study participant list (see
+ * StudyParticipantController).
  */
 function study_manager_entity_base_field_info(EntityTypeInterface $entity_type) {
-  if ($entity_type->id() !== 'file') {
-    return [];
+  if ($entity_type->id() === 'file') {
+    $fields = [];
+
+    $fields['study_manager_title'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('Title'))
+      ->setDescription(t('Display title shown on study pages for shared library files.'))
+      ->setSetting('max_length', 255)
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayConfigurable('view', TRUE);
+
+    $fields['study_manager_description'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('Description'))
+      ->setDescription(t('Short description shown on study pages for shared library files.'))
+      ->setSetting('max_length', 255)
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayConfigurable('view', TRUE);
+
+    return $fields;
   }
 
-  $fields = [];
+  if ($entity_type->id() === 'user') {
+    $fields = [];
 
-  $fields['study_manager_title'] = BaseFieldDefinition::create('string')
-    ->setLabel(t('Title'))
-    ->setDescription(t('Display title shown on study pages for shared library files.'))
-    ->setSetting('max_length', 255)
-    ->setDisplayConfigurable('form', TRUE)
-    ->setDisplayConfigurable('view', TRUE);
+    $fields['study_manager_first_name'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('First name'))
+      ->setSetting('max_length', 255)
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayConfigurable('view', TRUE);
 
-  $fields['study_manager_description'] = BaseFieldDefinition::create('string')
-    ->setLabel(t('Description'))
-    ->setDescription(t('Short description shown on study pages for shared library files.'))
-    ->setSetting('max_length', 255)
-    ->setDisplayConfigurable('form', TRUE)
-    ->setDisplayConfigurable('view', TRUE);
+    $fields['study_manager_last_name'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('Last name'))
+      ->setSetting('max_length', 255)
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayConfigurable('view', TRUE);
 
-  return $fields;
+    $fields['study_manager_phone'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('Phone number'))
+      ->setSetting('max_length', 32)
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayConfigurable('view', TRUE);
+
+    $fields['study_manager_address'] = BaseFieldDefinition::create('string_long')
+      ->setLabel(t('Mailing address'))
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayConfigurable('view', TRUE);
+
+    return $fields;
+  }
+
+  return [];
 }
 
 /**

@@ -11,10 +11,16 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 /**
  * Bulk-creates/links participant user accounts for a study from a CSV.
  *
- * The CSV has two columns: email, participant_id. participant_id is the
+ * The CSV has columns: email, participant_id, first_name, last_name, and
+ * optionally phone and mailing_address. participant_id is the
  * researcher-assigned identifier that correlates this participant to rows
  * in the study's own data files - it's scoped per-study, not globally
  * unique, so it's validated for uniqueness within this study only.
+ *
+ * first_name/last_name/phone/mailing_address are only ever written to the
+ * account on creation (see study_manager_entity_base_field_info()) - a row
+ * for an email that's already registered links the existing account as-is
+ * and doesn't overwrite its profile fields.
  */
 class ParticipantUploadForm extends FormBase {
 
@@ -37,7 +43,7 @@ class ParticipantUploadForm extends FormBase {
     $form['csv_file'] = [
       '#type' => 'file',
       '#title' => $this->t('Participant mapping file'),
-      '#description' => $this->t('A CSV file with two columns: email, participant_id. A new account (with a set-password email) is created for any email not already registered.'),
+      '#description' => $this->t('A CSV file with columns: email, participant_id, first_name, last_name, and optionally phone, mailing_address. A new account (with a set-password email) is created for any email not already registered.'),
       '#required' => TRUE,
     ];
 
@@ -89,10 +95,14 @@ class ParticipantUploadForm extends FormBase {
     $header = array_map(fn($col) => strtolower(trim((string) $col)), $header ?: []);
     $email_col = array_search('email', $header, TRUE);
     $participant_id_col = array_search('participant_id', $header, TRUE);
+    $first_name_col = array_search('first_name', $header, TRUE);
+    $last_name_col = array_search('last_name', $header, TRUE);
+    $phone_col = array_search('phone', $header, TRUE);
+    $address_col = array_search('mailing_address', $header, TRUE);
 
-    if ($email_col === FALSE || $participant_id_col === FALSE) {
+    if ($email_col === FALSE || $participant_id_col === FALSE || $first_name_col === FALSE || $last_name_col === FALSE) {
       fclose($handle);
-      $this->messenger()->addError($this->t('The CSV must have "email" and "participant_id" columns.'));
+      $this->messenger()->addError($this->t('The CSV must have "email", "participant_id", "first_name", and "last_name" columns.'));
       return;
     }
 
@@ -107,9 +117,13 @@ class ParticipantUploadForm extends FormBase {
       $row_num++;
       $email = trim((string) ($row[$email_col] ?? ''));
       $participant_id = trim((string) ($row[$participant_id_col] ?? ''));
+      $first_name = trim((string) ($row[$first_name_col] ?? ''));
+      $last_name = trim((string) ($row[$last_name_col] ?? ''));
+      $phone = $phone_col !== FALSE ? trim((string) ($row[$phone_col] ?? '')) : '';
+      $address = $address_col !== FALSE ? trim((string) ($row[$address_col] ?? '')) : '';
 
-      if ($email === '' || $participant_id === '') {
-        $skipped[] = $this->t('Row @row: missing email or participant_id.', ['@row' => $row_num]);
+      if ($email === '' || $participant_id === '' || $first_name === '' || $last_name === '') {
+        $skipped[] = $this->t('Row @row: missing email, participant_id, first_name, or last_name.', ['@row' => $row_num]);
         continue;
       }
 
@@ -158,6 +172,10 @@ class ParticipantUploadForm extends FormBase {
             // equivalent to "pending until they set a password".
             'status' => 1,
           ]);
+          $account->set('study_manager_first_name', $first_name);
+          $account->set('study_manager_last_name', $last_name);
+          $account->set('study_manager_phone', $phone);
+          $account->set('study_manager_address', $address);
           $account->addRole('study_participant');
           $account->enforceIsNew();
           $account->save();

@@ -292,3 +292,28 @@ function study_manager_update_8009() {
     }
   }
 }
+
+/**
+ * Installs the study_manager_first_name / study_manager_last_name /
+ * study_manager_phone / study_manager_address base fields on the core User
+ * entity (see study_manager_entity_base_field_info()), populated for
+ * participants via ParticipantUploadForm and shown on the study participant
+ * list (see StudyParticipantController).
+ */
+function study_manager_update_8010() {
+  $update_manager = \Drupal::entityDefinitionUpdateManager();
+  $fields = \Drupal::service('entity_field.manager')->getBaseFieldDefinitions('user');
+
+  $new_fields = [
+    'study_manager_first_name',
+    'study_manager_last_name',
+    'study_manager_phone',
+    'study_manager_address',
+  ];
+
+  foreach ($new_fields as $field_name) {
+    if (isset($fields[$field_name]) && !$update_manager->getFieldStorageDefinition($field_name, 'user')) {
+      $update_manager->installFieldStorageDefinition($field_name, 'user', 'study_manager', $fields[$field_name]);
+    }
+  }
+}
