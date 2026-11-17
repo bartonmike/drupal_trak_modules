@@ -46,8 +46,8 @@ class StudyAuthController extends ControllerBase {
       return new JsonResponse([
 	      'valid_session' => FALSE,
 	      'reason' => 'invalid session',
-	      'session_id' => $session_id,
-        'hashed_session_id' => $hashed_sid,
+	      #'session_id' => $session_id,
+        #'hashed_session_id' => $hashed_sid,
       ]);
     }
 
@@ -172,8 +172,8 @@ class StudyAuthController extends ControllerBase {
       ],
       'selected_shared_studies' => $shared_studies,
       
-	      'session_id' => $session_id,
-        'hashed_session_id' => $hashed_sid,
+	      #'session_id' => $session_id,
+        #'hashed_session_id' => $hashed_sid,
     ]);
   }
 
