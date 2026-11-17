@@ -58,6 +58,16 @@ class StudyManagerConfigForm extends ConfigFormBase {
       '#default_value' => $config->get('allowed_extensions') ?: 'pdf doc docx txt jpg png gif',
     ];
 
+    $form['shared_index_path'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Shared Studies Index File'),
+      '#description' => $this->t('Path within the private file system to the YAML index of shared studies. Leave blank to use @default. Currently reading: @current', [
+        '@default' => ($config->get('file_path') ?: 'studies') . '/study_data/global.yaml',
+        '@current' => \Drupal::service('study_manager.shared_study_index')->getIndexUri(),
+      ]),
+      '#default_value' => $config->get('shared_index_path'),
+    ];
+
     return parent::buildForm($form, $form_state);
   }
 
@@ -76,6 +86,15 @@ class StudyManagerConfigForm extends ConfigFormBase {
       $form_state->setErrorByName('file_path', $this->t('Path cannot contain ".." for security reasons.'));
     }
 
+    $index_path = trim($form_state->getValue('shared_index_path'));
+    if (strpos($index_path, '/') === 0) {
+      $form_state->setErrorByName('shared_index_path', $this->t('Path should not start with a slash.'));
+    }
+
+    if (strpos($index_path, '..') !== FALSE) {
+      $form_state->setErrorByName('shared_index_path', $this->t('Path cannot contain ".." for security reasons.'));
+    }
+
     parent::validateForm($form, $form_state);
   }
 
@@ -87,6 +106,7 @@ class StudyManagerConfigForm extends ConfigFormBase {
       ->set('file_path', $form_state->getValue('file_path'))
       ->set('max_file_size', $form_state->getValue('max_file_size'))
       ->set('allowed_extensions', $form_state->getValue('allowed_extensions'))
+      ->set('shared_index_path', trim($form_state->getValue('shared_index_path')))
       ->save();
 
     parent::submitForm($form, $form_state);

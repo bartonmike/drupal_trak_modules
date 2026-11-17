@@ -110,3 +110,36 @@ study_manager.participants_remove:
     parameters:
       study:
         type: 'entity:study'
+
+study_manager.shared_studies:
+  path: '/studies/shared'
+  defaults:
+    _controller: '\Drupal\study_manager\Controller\SharedStudiesController::page'
+    _title: 'Shared Studies'
+  requirements:
+    _permission: 'browse shared studies'
+
+study_manager.shared_studies_add:
+  path: '/study/{study}/shared-studies/{project_id}/add'
+  defaults:
+    _controller: '\Drupal\study_manager\Controller\SharedStudiesController::add'
+  requirements:
+    _entity_access: 'study.update'
+    _permission: 'browse shared studies'
+    _csrf_token: 'TRUE'
+  options:
+    parameters:
+      study:
+        type: 'entity:study'
+
+study_manager.shared_studies_remove:
+  path: '/study/{study}/shared-studies/{project_id}/remove'
+  defaults:
+    _controller: '\Drupal\study_manager\Controller\SharedStudiesController::remove'
+  requirements:
+    _entity_access: 'study.update'
+    _csrf_token: 'TRUE'
+  options:
+    parameters:
+      study:
+        type: 'entity:study'

@@ -193,6 +193,16 @@ class Study extends ContentEntityBase implements EntityOwnerInterface {
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayConfigurable('view', TRUE);
 
+    // --- Shared studies: whole studies picked from global.yaml. ---
+    // Stores global.yaml project IDs (which aren't always numeric study IDs,
+    // e.g. "New_4"), managed from the shared studies page rather than the
+    // edit form - see SharedStudiesController.
+    $fields['shared_studies'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('Shared Studies'))
+      ->setDescription(t('Project IDs of shared studies (from global.yaml) added to this study.'))
+      ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
+      ->setSetting('max_length', 64);
+
     $fields['status'] = BaseFieldDefinition::create('list_string')
       ->setLabel(t('Status'))
       ->setDescription(t('The status of the study.'))

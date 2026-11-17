@@ -1,0 +1,113 @@
+{#
+  Available variables:
+  - projects: list of shared studies from global.yaml, each with project_id,
+    dom_id, name, description, date_range, locations (list), metadata
+    (label => list), and action: null, or {state: 'add'|'added'|'self', url}.
+  - study_options: study titles keyed by ID that the viewer can add to.
+  - selected_study: {id, title, url} for the study being added to, or null.
+  - index_missing: TRUE if global.yaml is missing, unreadable, or empty.
+#}
+{% set show_actions = study_options is not empty %}
+<div class="study-page shared-studies">
+  <div class="study-page__header">
+    <div>
+      <p class="study-page__eyebrow">{{ 'Shared Data'|t }}</p>
+      <h2 class="study-page__title">{{ 'Shared Studies'|t }}</h2>
+      <p class="study-page__description">{{ 'Browse studies shared by other researchers and add them to your own study for comparison.'|t }}</p>
+    </div>
+    {% if selected_study %}
+      <div class="study-page__header-actions">
+        <a class="study-btn" href="{{ selected_study.url }}">{{ 'Back to study'|t }}</a>
+      </div>
+    {% endif %}
+  </div>
+
+  {% if show_actions %}
+    <form class="shared-studies__picker js-shared-studies-picker" method="get">
+      <label for="shared-studies-study">{{ 'Adding to'|t }}</label>
+      <select id="shared-studies-study" name="study">
+        {% if not selected_study %}
+          <option value="">{{ '- Select one of your studies -'|t }}</option>
+        {% endif %}
+        {% for id, label in study_options %}
+          <option value="{{ id }}"{{ selected_study and selected_study.id == id ? ' selected' }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="study-btn js-shared-studies-picker-submit">{{ 'Select'|t }}</button>
+    </form>
+  {% endif %}
+
+  <hr class="study-page__divider">
+
+  {% if index_missing %}
+    <p class="study-empty">{{ 'No shared studies are available yet.'|t }}</p>
+  {% else %}
+    <div class="shared-studies__toolbar">
+      <input id="shared-studies-search" class="js-shared-studies-search" type="search" placeholder="{{ 'Search studies…'|t }}" aria-label="{{ 'Search studies'|t }}">
+      <button type="button" class="shared-studies__tool js-shared-studies-clear">{{ 'Clear search'|t }}</button>
+      <button type="button" class="shared-studies__tool js-shared-studies-toggle">{{ 'Toggle cards ↔ table'|t }}</button>
+      <p class="shared-studies__status js-shared-studies-status" aria-live="polite">{{ '@count studies'|t({'@count': projects|length}) }}</p>
+    </div>
+
+    <table id="shared-studies-table" class="shared-studies__table cards js-shared-studies-table">
+      <thead>
+        <tr>
+          <th>{{ 'Study'|t }}</th>
+          <th>{{ 'Date range'|t }}</th>
+          <th>{{ 'Locations'|t }}</th>
+          <th>{{ 'Details'|t }}</th>
+          {% if show_actions %}<th>{{ 'Add to study'|t }}</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for project in projects %}
+          <tr id="{{ project.dom_id }}" class="{{ project.action and project.action.state == 'added' ? 'is-added' }}">
+            <td class="shared-studies__main">
+              <b class="shared-studies__name">{{ project.name }}</b>
+              <span class="shared-studies__id">{{ 'Project @id'|t({'@id': project.project_id}) }}</span>
+              {% if project.description %}
+                <p class="shared-studies__description">{{ project.description }}</p>
+              {% endif %}
+            </td>
+            <td data-label="{{ 'Date range'|t }}" class="{{ project.date_range ? '' : 'is-empty' }}">
+              {{ project.date_range ?: '—' }}
+            </td>
+            <td data-label="{{ 'Locations'|t }}" class="{{ project.locations ? '' : 'is-empty' }}">
+              {% if project.locations %}
+                {% for location in project.locations %}
+                  <a href="#" class="js-search-tag" data-term="{{ location }}">{{ location }}</a>{{ not loop.last ? ', ' }}
+                {% endfor %}
+              {% else %}—{% endif %}
+            </td>
+            <td data-label="{{ 'Details'|t }}" class="{{ project.metadata ? '' : 'is-empty' }}">
+              {% if project.metadata %}
+                {% for label, values in project.metadata %}
+                  <div class="shared-studies__tags">
+                    {{ label }}:
+                    {% for value in values %}
+                      <a href="#" class="js-search-tag" data-term="{{ value }}">{{ value }}</a>{{ not loop.last ? ', ' }}
+                    {% endfor %}
+                  </div>
+                {% endfor %}
+              {% else %}—{% endif %}
+            </td>
+            {% if show_actions %}
+              <td class="shared-studies__action">
+                {% if not project.action %}
+                  <span class="shared-studies__hint">{{ 'Select a study above to add this.'|t }}</span>
+                {% elseif project.action.state == 'self' %}
+                  <span class="shared-studies__hint">{{ 'This is the selected study.'|t }}</span>
+                {% elseif project.action.state == 'added' %}
+                  <span class="shared-studies__added">✓ {{ 'Added'|t }}</span>
+                  <a class="shared-studies__remove js-shared-studies-action" href="{{ project.action.url }}">{{ 'Remove'|t }}</a>
+                {% else %}
+                  <a class="study-btn study-btn--primary js-shared-studies-action" href="{{ project.action.url }}">{{ 'Add to @study'|t({'@study': selected_study.title}) }}</a>
+                {% endif %}
+              </td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</div>

@@ -2,6 +2,7 @@
 
 namespace Drupal\study_manager\Controller;
 
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Render\Markup;
 use Drupal\Core\Url;
@@ -67,6 +68,8 @@ class StudyController extends ControllerBase {
       'browse_url' => $edit_url,
     ];
 
+    $shared_studies = $this->buildSharedStudies($study);
+
     $participants = NULL;
     if ($study->access('update')) {
       $participants = [
@@ -92,12 +95,60 @@ class StudyController extends ControllerBase {
       '#comparison_data' => $comparison_data,
       '#reference_resources' => $reference_resources,
       '#participants' => $participants,
+      '#shared_studies' => $shared_studies,
       '#cache' => [
         // Access checks above vary per-owner, not just per-permission, so
         // this has to vary by user, not merely by permission set.
         'contexts' => ['user'],
         'tags' => $study->getCacheTags(),
+        // Shared study names come from global.yaml, which is written outside
+        // Drupal and can't invalidate a cached copy of this page.
+        'max-age' => !empty($shared_studies['items']) ? 0 : Cache::PERMANENT,
       ],
+    ];
+  }
+
+  /**
+   * Builds the "Shared studies" section: studies from global.yaml that have
+   * been added to this one (see SharedStudiesController).
+   *
+   * @return array|null
+   *   {items, browse_url}, or NULL if there's nothing to show and the viewer
+   *   can't add anything.
+   */
+  private function buildSharedStudies(Study $study): ?array {
+    $can_manage = $study->access('update');
+    $can_browse = $can_manage && $this->currentUser()->hasPermission('browse shared studies');
+
+    $project_ids = array_column($study->get('shared_studies')->getValue(), 'value');
+    if (!$project_ids && !$can_browse) {
+      return NULL;
+    }
+
+    /** @var \Drupal\study_manager\Service\SharedStudyIndex $index */
+    $index = \Drupal::service('study_manager.shared_study_index');
+    $destination = $study->toUrl()->toString();
+
+    $items = [];
+    foreach ($project_ids as $project_id) {
+      $project = $index->getProject($project_id);
+      $items[] = [
+        'title' => $project['name'] ?? $project_id,
+        'meta' => $project
+          ? ($project['description'] ?: $this->t('Project @id', ['@id' => $project_id]))
+          : $this->t('No longer available in the shared index.'),
+        'url' => $can_manage ? Url::fromRoute('study_manager.shared_studies_remove', [
+          'study' => $study->id(),
+          'project_id' => $project_id,
+        ], ['query' => ['destination' => $destination]])->toString() : NULL,
+        'action_label' => $this->t('Remove'),
+        'icon' => $this->icon('database'),
+      ];
+    }
+
+    return [
+      'items' => $items,
+      'browse_url' => $can_browse ? Url::fromRoute('study_manager.shared_studies', [], ['query' => ['study' => $study->id()]])->toString() : NULL,
     ];
   }
 

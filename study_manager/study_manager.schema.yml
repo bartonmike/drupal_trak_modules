@@ -11,3 +11,6 @@ study_manager.settings:
     allowed_extensions:
       type: string
       label: 'Allowed file extensions'
+    shared_index_path:
+      type: string
+      label: 'Shared studies index file path within private file system'

@@ -120,6 +120,23 @@ class StudyAuthController extends ControllerBase {
       return $paths;
     };
 
+    // Shared studies added from the shared studies page, as listed in
+    // global.yaml. "file" is passed through verbatim, i.e. relative to the
+    // study_data root (where global.yaml itself lives).
+    $shared_index = \Drupal::service('study_manager.shared_study_index');
+    $shared_studies = [];
+    foreach ($study->get('shared_studies') as $item) {
+      $project = $shared_index->getProject($item->value);
+      if ($project && $project['file_name'] !== '') {
+        $shared_studies[] = [
+          'project_id' => $project['project_id'],
+          'study_name' => $project['name'],
+          'file' => $project['file_name'],
+          'encrypted' => $project['encrypted'],
+        ];
+      }
+    }
+
     // Study Data and Private Comparison Data are encrypted at rest with a
     // per-study key (see Study::postSave()). Ensure the key is persisted,
     // then hand it to the caller so it can decrypt the files itself.
@@ -153,6 +170,7 @@ class StudyAuthController extends ControllerBase {
       'selected_reference_materials' => [
         'files' => $shared_paths('selected_reference_files'),
       ],
+      'selected_shared_studies' => $shared_studies,
       
 	      'session_id' => $session_id,
         'hashed_session_id' => $hashed_sid,

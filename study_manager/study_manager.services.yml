@@ -2,3 +2,9 @@ services:
   study_manager.encryption:
     class: Drupal\study_manager\Service\StudyEncryptionService
     arguments: ['@private_key']
+  study_manager.shared_study_index:
+    class: Drupal\study_manager\Service\SharedStudyIndex
+    arguments: ['@config.factory', '@logger.channel.study_manager']
+  logger.channel.study_manager:
+    parent: logger.channel_base
+    arguments: ['study_manager']

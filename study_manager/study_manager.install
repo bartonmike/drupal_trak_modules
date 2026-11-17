@@ -317,3 +317,18 @@ function study_manager_update_8010() {
     }
   }
 }
+
+/**
+ * Installs the shared_studies field on Study, holding the global.yaml
+ * project IDs added from the shared studies page (see
+ * SharedStudiesController).
+ */
+function study_manager_update_8011() {
+  $update_manager = \Drupal::entityDefinitionUpdateManager();
+  $entity_type = \Drupal::entityTypeManager()->getDefinition('study');
+  $fields = \Drupal\study_manager\Entity\Study::baseFieldDefinitions($entity_type);
+
+  if (!$update_manager->getFieldStorageDefinition('shared_studies', 'study')) {
+    $update_manager->installFieldStorageDefinition('shared_studies', 'study', 'study_manager', $fields['shared_studies']);
+  }
+}

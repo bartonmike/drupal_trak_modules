@@ -22,3 +22,7 @@ access study overview:
 manage shared study library:
   title: 'Manage shared study file library'
   description: 'Upload, remove, and manage files in the shared library that studies can select Comparison Data and Reference Materials from'
+
+browse shared studies:
+  title: 'Browse shared studies'
+  description: 'View the shared studies index (global.yaml) and add shared studies to studies you can edit'

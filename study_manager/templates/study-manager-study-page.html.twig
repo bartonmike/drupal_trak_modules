@@ -5,6 +5,7 @@
   - study_data_files, reference_files: lists of {name, meta, size, url, action_label, icon}.
   - comparison_data, reference_resources: {items: [{title, meta, url, action_label, icon}], browse_url}.
   - participants: {add_url, list_url} or null if the viewer has no manage access.
+  - shared_studies: {items: [{title, meta, url, action_label, icon}], browse_url} or null.
   - build_reports_url: URL to launch the reporting tool for this study.
 #}
 <div class="study-page">
@@ -143,6 +144,36 @@
         </div>
       {% else %}
         <p class="study-empty">{{ 'No reference resources selected yet.'|t }}</p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if shared_studies %}
+    <div class="study-section">
+      <div class="study-section__header">
+        <div>
+          <h2 class="study-section__title">{{ 'Shared studies'|t }}</h2>
+          <p class="study-section__subtitle">{{ 'Studies shared by other researchers, added for comparison with this study.'|t }}</p>
+        </div>
+        {% if shared_studies.browse_url %}
+          <a class="study-btn" href="{{ shared_studies.browse_url }}">{{ 'Browse shared studies'|t }}</a>
+        {% endif %}
+      </div>
+      {% if shared_studies.items %}
+        <div class="card-grid">
+          {% for item in shared_studies.items %}
+            <div class="data-card">
+              <div class="data-card__icon">{{ item.icon }}</div>
+              <div>
+                <p class="data-card__title">{{ item.title }}</p>
+                {% if item.meta %}<p class="data-card__meta">{{ item.meta }}</p>{% endif %}
+                {% if item.url %}<a class="data-card__link" href="{{ item.url }}">{{ item.action_label }}</a>{% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="study-empty">{{ 'No shared studies added yet.'|t }}</p>
       {% endif %}
     </div>
   {% endif %}

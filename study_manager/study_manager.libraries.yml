@@ -2,3 +2,14 @@ study_page:
   css:
     theme:
       css/study-page.css: {}
+
+shared_studies:
+  css:
+    theme:
+      css/study-page.css: {}
+      css/shared-studies.css: {}
+  js:
+    js/shared-studies.js: {}
+  dependencies:
+    - core/drupal
+    - core/once

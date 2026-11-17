@@ -26,6 +26,15 @@ function study_manager_theme($existing, $type, $theme, $path) {
         'comparison_data' => NULL,
         'reference_resources' => NULL,
         'participants' => NULL,
+        'shared_studies' => NULL,
+      ],
+    ],
+    'study_manager_shared_studies' => [
+      'variables' => [
+        'projects' => [],
+        'study_options' => [],
+        'selected_study' => NULL,
+        'index_missing' => FALSE,
       ],
     ],
   ];

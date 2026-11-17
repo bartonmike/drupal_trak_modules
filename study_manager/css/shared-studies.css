@@ -1,0 +1,257 @@
+/* Shared studies page. Builds on study-page.css (tokens, header, buttons). */
+
+.shared-studies {
+  --shared-card-bg: #fff;
+  --shared-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shared-collapsed-height: 340px;
+  --shared-toggle-height: 44px;
+}
+
+.shared-studies__picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 20px;
+}
+
+.shared-studies__picker label {
+  font-weight: 600;
+}
+
+.shared-studies__picker select {
+  min-width: 240px;
+  padding: 8px 10px;
+  border: 1px solid var(--study-border);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.shared-studies__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.shared-studies__toolbar input[type="search"] {
+  flex: 1 1 220px;
+  padding: 9px 12px;
+  border: 1px solid var(--study-border);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.shared-studies__tool {
+  padding: 9px 14px;
+  border: 1px solid var(--study-border);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: var(--shared-shadow);
+  cursor: pointer;
+}
+
+.shared-studies__status {
+  margin: 0 0 0 auto;
+  color: var(--study-muted);
+  font-size: 0.9rem;
+}
+
+.shared-studies__name {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.shared-studies__id {
+  display: block;
+  color: var(--study-muted);
+  font-size: 0.8rem;
+}
+
+.shared-studies__description {
+  margin: 6px 0 0;
+  color: var(--study-muted);
+  line-height: 1.5;
+}
+
+.shared-studies__tags + .shared-studies__tags {
+  margin-top: 4px;
+}
+
+.shared-studies__table a.js-search-tag {
+  color: var(--study-accent);
+}
+
+.shared-studies__hint {
+  color: var(--study-muted);
+  font-size: 0.85rem;
+}
+
+.shared-studies__added {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--study-badge-completed-bg);
+  color: var(--study-badge-completed-fg);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+.shared-studies__remove {
+  color: var(--study-badge-cancelled-fg);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* ===== Table view ===== */
+
+.shared-studies__table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--shared-card-bg);
+  border: 1px solid var(--study-border);
+  box-shadow: var(--shared-shadow);
+}
+
+.shared-studies__table th,
+.shared-studies__table td {
+  padding: 10px 12px;
+  vertical-align: top;
+  text-align: left;
+  border-bottom: 1px solid var(--study-border);
+}
+
+.shared-studies__table thead th {
+  background: #fafafa;
+  font-weight: 600;
+}
+
+.shared-studies__table:not(.cards) td.is-empty {
+  color: var(--study-muted);
+}
+
+.shared-studies__table:not(.cards) .card-toggle {
+  display: none !important;
+}
+
+/* ===== Cards view ===== */
+
+.shared-studies__table.cards {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.shared-studies__table.cards thead {
+  display: none;
+}
+
+.shared-studies__table.cards tbody {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.shared-studies__table.cards tbody tr {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--shared-card-bg);
+  border: 1px solid var(--study-border);
+  border-radius: 10px;
+  box-shadow: var(--shared-shadow);
+  overflow: hidden;
+}
+
+.shared-studies__table.cards tbody tr.is-added {
+  border-color: var(--study-badge-completed-fg);
+}
+
+/* Collapsed state: only applied once JS finds the card actually overflows. */
+.shared-studies__table.cards tbody tr.is-collapsible {
+  max-height: var(--shared-collapsed-height);
+  padding-bottom: var(--shared-toggle-height);
+}
+
+.shared-studies__table.cards tbody tr.is-collapsible::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: var(--shared-toggle-height);
+  height: 70px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--shared-card-bg));
+  pointer-events: none;
+}
+
+.shared-studies__table.cards tbody tr.is-collapsible.expanded {
+  max-height: none;
+}
+
+.shared-studies__table.cards tbody tr.expanded::before {
+  opacity: 0;
+}
+
+.shared-studies__table.cards tbody td {
+  display: block;
+  order: 2;
+  padding: 8px 14px;
+}
+
+.shared-studies__table.cards tbody td.is-empty {
+  display: none;
+}
+
+/* Keep the add button near the top so collapsing never hides it. */
+.shared-studies__table.cards tbody td.shared-studies__main {
+  order: 0;
+  padding-top: 14px;
+}
+
+.shared-studies__table.cards tbody td.shared-studies__action {
+  order: 1;
+  border-bottom: 1px solid var(--study-border);
+  padding-bottom: 12px;
+}
+
+.shared-studies__table.cards td[data-label]::before {
+  content: attr(data-label);
+  display: block;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--study-muted);
+  margin-bottom: 2px;
+}
+
+.shared-studies__table.cards .card-toggle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--shared-toggle-height);
+  border: 0;
+  border-top: 1px dashed var(--study-border);
+  background: var(--shared-card-bg);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .shared-studies__table.cards tbody {
+    grid-template-columns: 1fr;
+  }
+
+  .shared-studies__status {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  /* The table view is unreadable at phone width; scroll it sideways. */
+  .shared-studies__table:not(.cards) {
+    display: block;
+    overflow-x: auto;
+  }
+}
