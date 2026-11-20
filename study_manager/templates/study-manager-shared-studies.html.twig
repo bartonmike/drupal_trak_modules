@@ -56,7 +56,6 @@
           <th>{{ 'Date range'|t }}</th>
           <th>{{ 'Locations'|t }}</th>
           <th>{{ 'Details'|t }}</th>
-          {% if show_actions %}<th>{{ 'Add to study'|t }}</th>{% endif %}
         </tr>
       </thead>
       <tbody>
@@ -64,7 +63,23 @@
           <tr id="{{ project.dom_id }}" class="{{ project.action and project.action.state == 'added' ? 'is-added' }}">
             <td class="shared-studies__main">
               <b class="shared-studies__name">{{ project.name }}</b>
-              <span class="shared-studies__id">{{ 'Project @id'|t({'@id': project.project_id}) }}</span>
+              <div class="shared-studies__meta-row">
+                <span class="shared-studies__id">{{ 'Project @id'|t({'@id': project.project_id}) }}</span>
+                {% if show_actions %}
+                  <span class="shared-studies__action">
+                    {% if not project.action %}
+                      <span class="shared-studies__hint">{{ 'Select a study above to add this.'|t }}</span>
+                    {% elseif project.action.state == 'self' %}
+                      <span class="shared-studies__hint">{{ 'This is the selected study.'|t }}</span>
+                    {% elseif project.action.state == 'added' %}
+                      <span class="shared-studies__added">✓ {{ 'Added'|t }}</span>
+                      <a class="shared-studies__remove js-shared-studies-action" href="{{ project.action.url }}">{{ 'Remove'|t }}</a>
+                    {% else %}
+                      <a class="study-btn study-btn--primary shared-studies__add js-shared-studies-action" href="{{ project.action.url }}">{{ 'Add to @study'|t({'@study': selected_study.title}) }}</a>
+                    {% endif %}
+                  </span>
+                {% endif %}
+              </div>
               {% if project.description %}
                 <p class="shared-studies__description">{{ project.description }}</p>
               {% endif %}
@@ -91,20 +106,6 @@
                 {% endfor %}
               {% else %}—{% endif %}
             </td>
-            {% if show_actions %}
-              <td class="shared-studies__action">
-                {% if not project.action %}
-                  <span class="shared-studies__hint">{{ 'Select a study above to add this.'|t }}</span>
-                {% elseif project.action.state == 'self' %}
-                  <span class="shared-studies__hint">{{ 'This is the selected study.'|t }}</span>
-                {% elseif project.action.state == 'added' %}
-                  <span class="shared-studies__added">✓ {{ 'Added'|t }}</span>
-                  <a class="shared-studies__remove js-shared-studies-action" href="{{ project.action.url }}">{{ 'Remove'|t }}</a>
-                {% else %}
-                  <a class="study-btn study-btn--primary js-shared-studies-action" href="{{ project.action.url }}">{{ 'Add to @study'|t({'@study': selected_study.title}) }}</a>
-                {% endif %}
-              </td>
-            {% endif %}
           </tr>
         {% endfor %}
       </tbody>
